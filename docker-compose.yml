@@ -2,12 +2,16 @@ version: '3'
 
 services:
   db:
-    image: postgres
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: my_postgres
     container_name: meigens_db
     ports:
       - 5432:5432
     volumes:
       - db-store:/var/lib/postgresql/data
+      - ./dbinit:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_USER=${PG_USER}
       - POSTGRES_PASSWORD=${PG_PASSWORD}
