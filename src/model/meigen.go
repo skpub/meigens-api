@@ -7,10 +7,10 @@ import (
 	"github.com/google/uuid"
 )
 
-type Meigen struct {
-	bun.BaseModel `bun:"table:meigens,alias:m"`
+type Meigens struct {
+	bun.BaseModel `bun:"table:meigens"`
 	Id uuid.UUID `bun:",pk,type:uuid,default:uuid_generate_v4()"`
 	Meigen string `bun:"meigen,notnull,type:text"`
-	Date time.Time `bun:"createdAt,notnull,default:current_timestamp"`
+	CreatedAt time.Time `bun:"createdAt,notnull,default:current_timestamp"`
 	Whom uuid.UUID `bun:"whom,notnull,type:uuid"`
 }
