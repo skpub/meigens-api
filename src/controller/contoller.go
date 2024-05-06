@@ -12,9 +12,6 @@ import (
 	"meigens-api/src/model"
 )
 
-func List(db *bun.DB) {
-}
-
 func Create(db *bun.DB) {
 	_, err := db.NewCreateTable().Model((*model.Users)(nil)).Exec(context.Background())
 	if err != nil {
