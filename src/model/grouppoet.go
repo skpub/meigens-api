@@ -5,9 +5,9 @@ import (
 	"github.com/google/uuid"
 )
 
-type Relationships struct {
-	bun.BaseModel `bun:"table:relationships"`
+type GroupPoets struct {
+	bun.BaseModel `bun:"table:group_poets"`
 	Id uuid.UUID `bun:",pk,type:uuid,default:uuid_generate_v4()"`
-	Who *Users `bun:"rel:belongs-to"`
-	Whom *Users `bun:"rel:belongs-to"`
+	Group *Groups `bun:"rel:belongs-to"`
+	Poet *Poets `bun:"rel:belongs-to"`
 }

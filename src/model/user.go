@@ -15,4 +15,6 @@ type Users struct {
 	Since time.Time `bun:"since,unique,notnull,default:current_timestamp"`
 	Email string `bun:"email,unique,notnull,type:varchar(127)"`
 	Password string `bun:"password,unique,notnull,type:char(64)"`
+
+	// Relationships []*Relationships `bun:"rel:has-many"`
 }
