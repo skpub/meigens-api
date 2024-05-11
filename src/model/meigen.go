@@ -13,6 +13,6 @@ type Meigens struct {
 	Meigen string `bun:"meigen,notnull,type:text"`
 	CreatedAt time.Time `bun:"createdAt,notnull,default:current_timestamp"`
 	Whom uuid.UUID `bun:"whom,notnull,type:uuid"`
-	Group *Groups `bun:"group"` // FOREIGN KEY, NULLABLE
+	Group *Groups `bun:"rel:belongs-to"`
 	Poet *Poets `bun:"rel:belongs-to"`
 }

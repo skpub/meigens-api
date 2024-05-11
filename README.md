@@ -4,3 +4,5 @@
 
 ## API Documentation
 
+## ER Diagram
+![](DB_ER.png)
