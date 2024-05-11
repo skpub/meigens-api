@@ -12,7 +12,11 @@ type Meigens struct {
 	Id uuid.UUID `bun:",pk,type:uuid,default:uuid_generate_v4()"`
 	Meigen string `bun:"meigen,notnull,type:text"`
 	CreatedAt time.Time `bun:"createdAt,notnull,default:current_timestamp"`
-	Whom uuid.UUID `bun:"whom,notnull,type:uuid"`
-	Group *Groups `bun:"rel:belongs-to"`
-	Poet *Poets `bun:"rel:belongs-to"`
+	WhomID uuid.UUID `bun:"whom_id,notnull,type:uuid"`
+	GroupID uuid.UUID `bun:"group_id,type:uuid"`
+	PoetID uuid.UUID `bun:"poet_id,notnull,type:uuid"`
+
+	Whom *Users `bun:"rel:belongs-to,join:whom_id=id"`
+	Group *Groups `bun:"rel:belongs-to,join:group_id=id"`
+	Poet *Poets `bun:"rel:belongs-to,join:poet_id=id"`
 }

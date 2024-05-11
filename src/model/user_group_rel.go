@@ -8,6 +8,9 @@ import (
 type UserGroupRels struct {
 	bun.BaseModel `bun:"table:user_group_rels"`
 	Id uuid.UUID `bun:",pk,type:uuid,default:uuid_generate_v4()"`
-	Group *Groups `bun:"rel:belongs-to"`
-	User *Users `bun:"rel:belongs-to"`
+	GroupID uuid.UUID `bun:"group_id,notnull,type:uuid"`
+	UserID uuid.UUID `bun:"user_id,notnull,type:uuid"`
+
+	Group *Groups `bun:"group,rel:belongs-to,join:group_id=id"`
+	User *Users `bun:"user,rel:belongs-to,join:user_id=id"`
 }

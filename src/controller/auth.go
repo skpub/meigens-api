@@ -12,13 +12,6 @@ import (
 	"meigens-api/src/model"
 )
 
-func Create(db *bun.DB) {
-	_, err := db.NewCreateTable().Model((*model.Users)(nil)).Exec(context.Background())
-	if err != nil {
-		panic(err)
-	}
-}
-
 func Login(db *bun.DB, username string, password string) error {
 	pwhash := sha256.Sum256([]byte(password))
 

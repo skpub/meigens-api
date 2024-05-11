@@ -8,6 +8,8 @@ import (
 type UserPoets struct {
 	bun.BaseModel `bun:"table:user_poets"`
 	Id uuid.UUID `bun:",pk,type:uuid,default:uuid_generate_v4()"`
-	User *Users `bun:"rel:belongs-to"`
-	Poet *Poets `bun:"rel:belongs-to"`
+	UserID uuid.UUID `bun:"user_id,notnull,type:uuid"`
+	PoetID uuid.UUID `bun:"poet_id,notnull,type:uuid"`
+	User *Users `bun:"user,rel:belongs-to,join:user_id=id"`
+	Poet *Poets `bun:"poet,rel:belongs-to,join:poet_id=id"`
 }

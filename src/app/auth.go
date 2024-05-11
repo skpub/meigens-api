@@ -2,16 +2,19 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"meigens-api/src/model"
 	"meigens-api/src/controller"
 	"meigens-api/src/db"
+	"meigens-api/src/model"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/uptrace/bun"
 )
 
 func Signup(c *gin.Context) {
@@ -67,9 +70,10 @@ func Login(c *gin.Context) {
 			})
 			return
 		}
-		c.Header("Authorization", tokenString)
+		// c.Header("Authorization", tokenString)
 		c.JSON(200, gin.H{
 			"message": "You got an access token.",
+			"token": tokenString,
 		})
 	}
 }
@@ -80,15 +84,40 @@ func AuthMiddleware (c *gin.Context) {
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
-	})
-
-	if err != nil || !token.Valid {
+	}, jwt.WithJSONNumber())
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H {
-			"error": "Unauthorized.",
+			"error": "Unauthorized. (invalid token)",
 		})
 		c.Abort()
 		return
 	}
 
-	c.Next()
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		exp, _ := claims["exp"].(json.Number).Int64()
+		if exp < time.Now().Unix() {
+			c.JSON(http.StatusUnauthorized, gin.H {
+				"error": "Unauthorized. (your token is expired)",
+			})
+			c.Abort()
+			return
+		} else {
+			user_id, _ := uuid.Parse(claims["user_id"].(string))
+			user := model.Users {
+				Id: user_id,
+				Name: claims["username"].(string),
+			}
+			db := c.MustGet("db").(*bun.DB)
+			if err := db.NewSelect().Model(&user).Scan(context.Background()); err != nil && user.Id == uuid.Nil {
+				c.JSON(http.StatusUnauthorized, gin.H {
+					"error": "Unauthorized. (token is valid but user not found)",
+				})
+				c.Abort()
+				return
+			}
+			c.Set("user_id", claims["user_id"].(string))
+			c.Set("username", claims["username"].(string))
+			c.Next()
+		}
+	}
 }
