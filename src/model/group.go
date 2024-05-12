@@ -8,5 +8,5 @@ import (
 type Groups struct {
 	bun.BaseModel `bun:"table:groups"`
 	Id uuid.UUID `bun:",pk,type:uuid,default:uuid_generate_v4()"`
-	Name string `bun:",type:varchar(255)"`
+	Name string `bun:"name,type:varchar(255)"`
 }

@@ -8,35 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func AddGroup(c *gin.Context) {
-	db := c.MustGet("db").(*bun.DB)
-	ctx := context.Background()
-
-	user_id, _ := c.Get("user_id")
-	group_name := c.PostForm("group_name")
-
-	new_group := &model.Groups {
-		Name: group_name,
-	}
-
-	db.NewInsert().Model(new_group).Exec(ctx)
-
-	// Add the user to the group.
-	user_id_uuid, _ := uuid.Parse(user_id.(string))
-	new_user_group_rel := &model.UserGroupRels {
-		GroupID: new_group.Id,
-		UserID: user_id_uuid,
-	}
-	db.NewInsert().
-		Model(new_user_group_rel).
-		Exec(ctx)
-	
-	defer db.Close()
-	c.JSON(200, gin.H{
-		"message": "Successfully added the group, and you took part in it.",
-	})
-}
-
 func AddMeigenToGroup(c *gin.Context) {
 	db := c.MustGet("db").(*bun.DB)
 	ctx := context.Background()
@@ -47,7 +18,7 @@ func AddMeigenToGroup(c *gin.Context) {
 	meigen := c.PostForm("meigen")
 
 	// Check if the user is in the group.
-	ugRel := new(model.UserGroupRels)
+	ugRel := []model.UserGroupRels {}
 	err := db.NewSelect().
 		Model(&ugRel).
 		Where("user_id = ?", user_id).
@@ -89,20 +60,19 @@ func AddMeigenToGroup(c *gin.Context) {
 	}
 
 	// Exist: then get the poet_id.
-		poet_id := g_poet.PoetID
+	poet_id := g_poet.PoetID
+	user_id_uuid, _ := uuid.Parse(user_id.(string))
 
 
 	new_column := model.Meigens {
 		Meigen: meigen,
-		WhomID: user_id.(uuid.UUID),
+		WhomID: user_id_uuid,
 		GroupID: group_id_uuid,
 		PoetID: poet_id,
 	}
 	db.NewAddColumn().
 		Model(new_column).
 		Exec(ctx)
-	
-	defer db.Close()
 
 	c.JSON(200, gin.H{
 		"message": "Successfully added the meigen to the group.",

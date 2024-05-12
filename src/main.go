@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"meigens-api/src/app"
+	"meigens-api/src/db"
+
 	"github.com/joho/godotenv"
 )
 
@@ -11,8 +13,16 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	router := app.SetRouter()
+
+	db, err := db.Conn()
+	if err != nil {
+		panic("failed to connect db.")
+	}
+
+	router := app.SetRouter(db)
 	if err := router.Run(":8080"); err != nil {
 		log.Fatal(err)
 	}
+
+	defer db.Close()
 }

@@ -1,18 +1,15 @@
 package app
 
 import (
-	"github.com/gin-gonic/gin"
-	"meigens-api/src/db"
 	"meigens-api/src/controller"
+
+	"github.com/gin-gonic/gin"
+	"github.com/uptrace/bun"
 )
 
-func SetRouter() *gin.Engine {
+func SetRouter(db *bun.DB) *gin.Engine {
 	r := gin.Default()
 
-	db, err := db.Conn()
-	if err != nil {
-		panic("failed to connect db.")
-	}
 
 	r.Use(func(c *gin.Context) {
 		c.Set("db", db)
@@ -30,8 +27,11 @@ func SetRouter() *gin.Engine {
 		})
 	})
 
+	authGroup.GET("/fetch_group_ids", controller.FetchGroups)
 	authGroup.POST("/add_group", controller.AddGroup)
-	authGroup.POST("/add_meigen", controller.AddMeigenToGroup)
+	authGroup.POST("/add_meigen_to_group", controller.AddMeigenToGroup)
+
+	// defer db.Close()
 
 	return r
 }
