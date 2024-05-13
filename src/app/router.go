@@ -1,15 +1,14 @@
 package app
 
 import (
+	"database/sql"
 	"meigens-api/src/controller"
 
 	"github.com/gin-gonic/gin"
-	"github.com/uptrace/bun"
 )
 
-func SetRouter(db *bun.DB) *gin.Engine {
+func SetRouter(db *sql.DB) *gin.Engine {
 	r := gin.Default()
-
 
 	r.Use(func(c *gin.Context) {
 		c.Set("db", db)

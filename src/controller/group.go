@@ -1,74 +1,73 @@
 package controller
 
 import (
+	"database/sql"
 	"context"
-	"fmt"
-	"meigens-api/src/model"
+	"meigens-api/db"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/uptrace/bun"
 )
 
 func FetchGroups(c *gin.Context) {
-	db := c.MustGet("db").(*bun.DB)
+	user_id, _ := c.Get("user_id")
+	user_id_uuid, _ := uuid.Parse(user_id.(string))
+
+	db_handle := c.MustGet("db").(*sql.DB)
 	ctx := context.Background()
 
-	user_id, _ := c.Get("user_id")
-	// user_id_uuid, _ := uuid.Parse(user_id.(string))
-
-	var g_r_rels []model.UserGroupRels
-	err := db.NewSelect().
-		Model(&g_r_rels).
-		Where("user_id = ?", user_id).
-		Scan(ctx)
-	if err != nil {
-		fmt.Println(err)
-		InternalServerError(c, "DB error")
+	queries := db.New(db_handle)
+	if group_ids, err := queries.GetGroupsParticipated(ctx, user_id_uuid); err != nil {
+		InternalServerError(c, "failed to fetch groups.")
+		return
+	} else {
+		c.JSON(200, gin.H{
+			"groups": group_ids,
+		})
 	}
-
-	group_ids := make([]uuid.UUID, len(g_r_rels))
-	for i := 0; i < len(g_r_rels); i++ {
-		group_ids[i] = g_r_rels[i].GroupID
-	}
-
-	c.JSON(200, gin.H{
-		"groups": group_ids,
-	})
 }
 
 func AddGroup(c *gin.Context) {
-	db := c.MustGet("db").(*bun.DB)
+	db_handle := c.MustGet("db").(*sql.DB)
 	ctx := context.Background()
 
 	user_id, _ := c.Get("user_id")
+	user_id_uuid, _ := uuid.Parse(user_id.(string))
 	group_name := c.PostForm("group_name")
 
-	group_stil_ex := []model.Groups {}
-	if count, err := db.NewSelect().
-		Model(&group_stil_ex).
-		Where("name = ?", group_name).
-		Count(ctx); err != nil || count == 0 {
-		// Not exist: then add the group user specified.
-		new_group := &model.Groups {
-			Name: group_name,
-		}
-		db.NewInsert().Model(new_group).Exec(ctx)
-		// Add the user to the group.
-		user_id_uuid, _ := uuid.Parse(user_id.(string))
-		new_user_group_rel := &model.UserGroupRels {
-			GroupID: new_group.Id,
-			UserID: user_id_uuid,
-		}
-		db.NewInsert().
-			Model(new_user_group_rel).
-			Exec(ctx)
-	
-		c.JSON(200, gin.H{
-			"message": "Successfully added the group, and you took part in it.",
-		})
-		return
-	} else {
+	queries := db.New(db_handle)
+
+	group_ex := db.GroupEXParams {
+		UserID: user_id_uuid,
+		Name: group_name,
+	}
+	if count, err := queries.GroupEX(ctx, group_ex); err != nil {
+		InternalServerError(c, "failed to check the group.")
+	} else if count > 0 {
 		BadRequest(c, "The group you specified already exists.")
+	} else {
+		// Not exist: then add the group user specified.
+		new_group_params := db.CreateGroupParams {
+			Name: group_name,
+			OwnerID: user_id_uuid,
+		}
+		if new_group_id, err := queries.CreateGroup(ctx, new_group_params); err != nil {
+			InternalServerError(c, "failed to add the group.")
+			return
+		} else {
+			if err := queries.AddUserToGroup(ctx, db.AddUserToGroupParams {
+				UserID: user_id_uuid,
+				GroupID: new_group_id}); err != nil {
+				// Strange error !!!!
+				InternalServerError(c, "failed to add the user to the group.")
+				// TODO: delete the group.
+				return 
+			} else {
+			// Successfully added.
+				c.JSON(200, gin.H{
+					"message": "Successfully added the group. and you are the owner of the group.",
+				})
+			}
+		}
 	}
 }
