@@ -50,7 +50,7 @@ Query Parameters
 Response &rArr;
 ```json
 {
-    "groups": [GROUP_IDs],
+    "groups": [GROUP_ID],
 }
 ```
 

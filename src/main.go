@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"meigens-api/src/app"
-	"meigens-api/src/db"
+	"meigens-api/src/dbconn"
 
 	"github.com/joho/godotenv"
 )
@@ -14,7 +14,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	db, err := db.Conn()
+	db, err := dbconn.Conn()
 	if err != nil {
 		panic("failed to connect db.")
 	}
