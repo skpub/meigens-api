@@ -2,75 +2,121 @@ package app
 
 import (
 	"context"
+	"crypto/sha256"
+	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"meigens-api/src/controller"
-	"meigens-api/src/db"
-	"meigens-api/src/model"
 	"net/http"
 	"os"
 	"time"
 
+	"meigens-api/db"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
-	"github.com/uptrace/bun"
 )
 
 func Signup(c *gin.Context) {
+	user_id := c.PostForm("user_id")
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 	email := c.PostForm("email")
 
-	db_handle, _ := db.Conn()
+	ctx := context.Background()
 
-	err := controller.CreateUser(db_handle, username, password, email)
-	if err != nil {
-		// c.Error(err)
-		// User already exists.
+	db_handle := c.MustGet("db").(*sql.DB)
+	queries := db.New(db_handle)
+
+	// Check if user already exists.
+	if user_id_ex, err := queries.GetUserByName(context.Background(), user_id); err != nil {
 		c.JSON(400, gin.H{
-			"message": err.Error(),
+			"message": "DB error.",
 		})
-	} else {
-		// Successfully added.
-		c.JSON(200, gin.H{
-			"message": fmt.Sprintf("added %s", username),
+		c.Abort()
+		return
+	} else if user_id_ex == user_id {
+		c.JSON(400, gin.H{
+			"message": "User already exists.",
 		})
+		c.Abort()
+		return
 	}
+
+	// Create Default group for the user.
+	group_id, err := queries.CreateGroup(ctx, user_id + "_DEFAULT")
+	if err != nil {
+		c.JSON(500, gin.H{
+			"message": "failed to create default group.",
+		})
+		c.Abort()
+		return
+	}
+
+	// Create new user.
+	new_user_params := db.CreateUserParams {
+		ID: user_id,
+		Name: username,
+		Email: email,
+		Password: password,
+		DefaultGroupID: group_id,
+	}
+
+	_, err2 := queries.CreateUser(context.Background(), new_user_params)
+	if err2 != nil {
+		c.JSON(500, gin.H{
+			"message": "failed to create user.",
+		})
+		c.Abort()
+		return
+	}
+
+	queries.InitDefaultUG(ctx, db.InitDefaultUGParams{UserID: user_id, GroupID: group_id})
+
+	// Successfully added.
+	c.JSON(200, gin.H{
+		"message": fmt.Sprintf("added %s", username),
+	})
 }
 
 func Login(c *gin.Context) {
-	username := c.PostForm("username")
+	user_id := c.PostForm("user_id")
 	password := c.PostForm("password")
 
 	secret := os.Getenv("SECRET")
 
-	db_handle, _ := db.Conn()
+	db_handle, _ := c.MustGet("db").(*sql.DB)
 
-	err := controller.Login(db_handle, username, password)
-	if err != nil {
+	queries := db.New(db_handle)
+
+	password_hash := sha256.Sum256([]byte(password))
+	user_params := db.LoginParams {
+		ID: user_id,
+		Password: hex.EncodeToString(password_hash[:]),
+	}
+
+	if _, err := queries.Login(
+		context.Background(), user_params);
+		err != nil {
+		// invalid username or password
 		c.JSON(400, gin.H{
-			"message": err.Error(),
+			"message": "invalid username or password.",
 		})
+		c.Abort()
+		return
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims {
+		"user_id": user_id,
+		"exp": time.Now().Add(time.Hour * 24 * 3).Unix(),
+	})
+	tokenString, err := token.SignedString([]byte(secret))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H {
+			"error": "Failed to generate token.",
+		})
+		c.Abort()
+		return
 	} else {
-		var user model.Users
-		err := db_handle.NewSelect().
-			Model(&user).
-			Where("name = ?", username).
-			Scan(context.Background())
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims {
-			"user_id": user.Id,
-			"username": username,
-			"exp": time.Now().Add(time.Hour * 24 * 3).Unix(),
-		})
-		tokenString, err := token.SignedString([]byte(secret))
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H {
-				"error": "Failed to generate token.",
-			})
-			return
-		}
-		// c.Header("Authorization", tokenString)
 		c.JSON(200, gin.H{
 			"message": "You got an access token.",
 			"token": tokenString,
@@ -102,19 +148,9 @@ func AuthMiddleware (c *gin.Context) {
 			c.Abort()
 			return
 		} else {
-			user_id, _ := uuid.Parse(claims["user_id"].(string))
-			user := model.Users {
-				Id: user_id,
-				Name: claims["username"].(string),
-			}
-			db := c.MustGet("db").(*bun.DB)
-			if err := db.NewSelect().Model(&user).Scan(context.Background()); err != nil && user.Id == uuid.Nil {
-				c.JSON(http.StatusUnauthorized, gin.H {
-					"error": "Unauthorized. (token is valid but user not found)",
-				})
-				c.Abort()
-				return
-			}
+			// if claims["exp"] > time.Now().Add(time.Hour * 24 * 3).Unix() {
+			// }
+				// Authorized
 			c.Set("user_id", claims["user_id"].(string))
 			c.Set("username", claims["username"].(string))
 			c.Next()

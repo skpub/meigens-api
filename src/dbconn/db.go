@@ -1,4 +1,4 @@
-package db
+package dbconn
 
 import (
 	"database/sql"
@@ -6,13 +6,14 @@ import (
 	"os"
 	"log"
 
-	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/dialect/pgdialect"
-	"github.com/uptrace/bun/driver/pgdriver"
+	// "github.com/uptrace/bun"
+	// "github.com/uptrace/bun/dialect/pgdialect"
+	// "github.com/uptrace/bun/driver/pgdriver"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
-func Conn() (*bun.DB, error) {
+func Conn() (*sql.DB, error) {
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -25,8 +26,14 @@ func Conn() (*bun.DB, error) {
 	dbname := os.Getenv("PG_DBNAME")
 
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbname)
-	pgdb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
-	db := bun.NewDB(pgdb, pgdialect.New())
+	db, err := sql.Open("postgres", dsn)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// pgdb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
+	// db := bun.NewDB(pgdb, pgdialect.New())
 
 	return db, nil
 }

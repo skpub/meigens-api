@@ -1,0 +1,7 @@
+version: 1
+packages:
+  - name: db
+    path: ./db
+    queries: ./db/query/query.sql
+    schema: ./db/query/schema.sql
+    engine: postgresql
