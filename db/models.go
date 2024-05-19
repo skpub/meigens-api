@@ -14,43 +14,35 @@ type Group struct {
 	ID        uuid.UUID
 	Name      string
 	CreatedAt sql.NullTime
-	OwnerID   uuid.UUID
 }
 
 type Meigen struct {
 	ID        uuid.UUID
 	Meigen    string
 	CreatedAt sql.NullTime
-	WhomID    uuid.UUID
-	GroupID   uuid.NullUUID
+	WhomID    string
+	GroupID   uuid.UUID
 	PoetID    uuid.UUID
 }
 
 type Poet struct {
-	ID   uuid.UUID
-	Name string
-}
-
-type PoetGroupRel struct {
-	PoetID  uuid.UUID
+	ID      uuid.UUID
+	Name    string
 	GroupID uuid.UUID
-}
-
-type PoetUserRel struct {
-	PoetID uuid.UUID
-	UserID uuid.UUID
 }
 
 type User struct {
-	ID       uuid.UUID
-	Name     string
-	Bio      sql.NullString
-	Since    sql.NullTime
-	Email    string
-	Password string
+	ID             string
+	Name           string
+	Bio            sql.NullString
+	Since          sql.NullTime
+	Email          string
+	Password       string
+	DefaultGroupID uuid.UUID
 }
 
 type UserGroupRel struct {
-	UserID  uuid.UUID
-	GroupID uuid.UUID
+	UserID     string
+	GroupID    uuid.UUID
+	Permission int16
 }

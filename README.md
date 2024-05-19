@@ -16,20 +16,22 @@ but no string value is expected.
 Query Parameters
 
 * `username`
+* `user_id`
+* `email`
 * `password`
 
 ### `POST` /login
 
 Query Parameters
 
-* `username`
+* `user_id`
 * `password`
 
 Response &rArr;
 ```json
 {
 	"message": "You got an access token.",
-	"token": YOUR TOKEN,
+	"token": YOUR TOKEN
 }
 ```
 
@@ -45,12 +47,20 @@ Query Parameters
 
 * `group_name`
 
-### `POST` /auth/fetch_group_ids
+Response &rArr;
+```json
+{
+	"message": "Successfully added the group.",
+    "group_id": GROUP_ID
+}
+```
+
+### `GET` /auth/fetch_group_ids
 
 Response &rArr;
 ```json
 {
-    "groups": [GROUP_ID],
+    "group_ids": [GROUP_ID]
 }
 ```
 

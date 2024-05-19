@@ -12,101 +12,180 @@ import (
 )
 
 const addUserToGroup = `-- name: AddUserToGroup :exec
-INSERT INTO user_group_rels (user_id, group_id) VALUES ($1, $2)
+INSERT INTO user_group_rels (user_id, group_id, permission) VALUES ($1, $2, $3)
 `
 
 type AddUserToGroupParams struct {
-	UserID  uuid.UUID
-	GroupID uuid.UUID
+	UserID     string
+	GroupID    uuid.UUID
+	Permission int16
 }
 
 func (q *Queries) AddUserToGroup(ctx context.Context, arg AddUserToGroupParams) error {
-	_, err := q.db.ExecContext(ctx, addUserToGroup, arg.UserID, arg.GroupID)
+	_, err := q.db.ExecContext(ctx, addUserToGroup, arg.UserID, arg.GroupID, arg.Permission)
 	return err
 }
 
-const createGroup = `-- name: CreateGroup :one
-INSERT INTO groups (name, owner_id) VALUES ($1, $2) RETURNING id
+const checkGroupExists = `-- name: CheckGroupExists :one
+SELECT count(*) FROM user_group_rels JOIN groups ON user_group_rels.group_id = groups.id
+    WHERE user_id = $1 AND groups.name = $2
 `
 
-type CreateGroupParams struct {
-	Name    string
-	OwnerID uuid.UUID
+type CheckGroupExistsParams struct {
+	UserID string
+	Name   string
 }
 
-func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) (uuid.UUID, error) {
-	row := q.db.QueryRowContext(ctx, createGroup, arg.Name, arg.OwnerID)
+func (q *Queries) CheckGroupExists(ctx context.Context, arg CheckGroupExistsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkGroupExists, arg.UserID, arg.Name)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const checkPoetExists = `-- name: CheckPoetExists :one
+SELECT count(*) FROM poets WHERE name = $1 AND group_id = $2
+`
+
+type CheckPoetExistsParams struct {
+	Name    string
+	GroupID uuid.UUID
+}
+
+func (q *Queries) CheckPoetExists(ctx context.Context, arg CheckPoetExistsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkPoetExists, arg.Name, arg.GroupID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const checkUserExists = `-- name: CheckUserExists :one
+SELECT count(*) FROM users WHERE id = $1
+`
+
+func (q *Queries) CheckUserExists(ctx context.Context, id string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkUserExists, id)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const checkUserExistsGroup = `-- name: CheckUserExistsGroup :one
+SELECT count(*) from user_group_rels WHERE user_id = $1 AND group_id = $2
+`
+
+type CheckUserExistsGroupParams struct {
+	UserID  string
+	GroupID uuid.UUID
+}
+
+func (q *Queries) CheckUserExistsGroup(ctx context.Context, arg CheckUserExistsGroupParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkUserExistsGroup, arg.UserID, arg.GroupID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const createGroup = `-- name: CreateGroup :one
+INSERT INTO groups (name) VALUES ($1) RETURNING id
+`
+
+func (q *Queries) CreateGroup(ctx context.Context, name string) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, createGroup, name)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
 }
 
-const createMeigen = `-- name: CreateMeigen :exec
-INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4)
+const createMeigen = `-- name: CreateMeigen :one
+INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4) RETURNING id
 `
 
 type CreateMeigenParams struct {
 	Meigen  string
-	WhomID  uuid.UUID
-	GroupID uuid.NullUUID
+	WhomID  string
+	GroupID uuid.UUID
 	PoetID  uuid.UUID
 }
 
-func (q *Queries) CreateMeigen(ctx context.Context, arg CreateMeigenParams) error {
-	_, err := q.db.ExecContext(ctx, createMeigen,
+func (q *Queries) CreateMeigen(ctx context.Context, arg CreateMeigenParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, createMeigen,
 		arg.Meigen,
 		arg.WhomID,
 		arg.GroupID,
 		arg.PoetID,
 	)
-	return err
-}
-
-const createPoet = `-- name: CreatePoet :one
-INSERT INTO poets (name) VALUES ($1) RETURNING id
-`
-
-func (q *Queries) CreatePoet(ctx context.Context, name string) (uuid.UUID, error) {
-	row := q.db.QueryRowContext(ctx, createPoet, name)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
 }
 
-const createPoetGroupRel = `-- name: CreatePoetGroupRel :exec
-INSERT INTO poet_group_rels (poet_id, group_id) VALUES ($1, $2)
+const createPoet = `-- name: CreatePoet :one
+INSERT INTO poets (name, group_id) VALUES ($1, $2) RETURNING id
 `
 
-type CreatePoetGroupRelParams struct {
-	PoetID  uuid.UUID
+type CreatePoetParams struct {
+	Name    string
 	GroupID uuid.UUID
 }
 
-func (q *Queries) CreatePoetGroupRel(ctx context.Context, arg CreatePoetGroupRelParams) error {
-	_, err := q.db.ExecContext(ctx, createPoetGroupRel, arg.PoetID, arg.GroupID)
-	return err
+func (q *Queries) CreatePoet(ctx context.Context, arg CreatePoetParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, createPoet, arg.Name, arg.GroupID)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
 }
 
-const createUser = `-- name: CreateUser :exec
-INSERT INTO users (name, email, password) VALUES ($1, $2, $3)
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (id, name, email, password, default_group_id) VALUES ($1, $2, $3, $4, $5) RETURNING id
 `
 
 type CreateUserParams struct {
-	Name     string
-	Email    string
-	Password string
+	ID             string
+	Name           string
+	Email          string
+	Password       string
+	DefaultGroupID uuid.UUID
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
-	_, err := q.db.ExecContext(ctx, createUser, arg.Name, arg.Email, arg.Password)
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (string, error) {
+	row := q.db.QueryRowContext(ctx, createUser,
+		arg.ID,
+		arg.Name,
+		arg.Email,
+		arg.Password,
+		arg.DefaultGroupID,
+	)
+	var id string
+	err := row.Scan(&id)
+	return id, err
+}
+
+const deleteGroup = `-- name: DeleteGroup :exec
+DELETE FROM groups WHERE id = $1
+`
+
+func (q *Queries) DeleteGroup(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteGroup, id)
 	return err
+}
+
+const getDefaultGroupID = `-- name: GetDefaultGroupID :one
+SELECT default_group_id FROM users WHERE id = $1
+`
+
+func (q *Queries) GetDefaultGroupID(ctx context.Context, id string) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, getDefaultGroupID, id)
+	var default_group_id uuid.UUID
+	err := row.Scan(&default_group_id)
+	return default_group_id, err
 }
 
 const getGroupsParticipated = `-- name: GetGroupsParticipated :many
 SELECT group_id from user_group_rels WHERE user_id = $1
 `
 
-func (q *Queries) GetGroupsParticipated(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
+func (q *Queries) GetGroupsParticipated(ctx context.Context, userID string) ([]uuid.UUID, error) {
 	rows, err := q.db.QueryContext(ctx, getGroupsParticipated, userID)
 	if err != nil {
 		return nil, err
@@ -129,54 +208,68 @@ func (q *Queries) GetGroupsParticipated(ctx context.Context, userID uuid.UUID) (
 	return items, nil
 }
 
-const getUserByName = `-- name: GetUserByName :one
-SELECT name FROM users WHERE name = $1
+const getPoetID = `-- name: GetPoetID :one
+SELECT id FROM poets WHERE name = $1 AND group_id = $2
 `
 
-func (q *Queries) GetUserByName(ctx context.Context, name string) (string, error) {
-	row := q.db.QueryRowContext(ctx, getUserByName, name)
-	err := row.Scan(&name)
-	return name, err
+type GetPoetIDParams struct {
+	Name    string
+	GroupID uuid.UUID
+}
+
+func (q *Queries) GetPoetID(ctx context.Context, arg GetPoetIDParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, getPoetID, arg.Name, arg.GroupID)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getUserByName = `-- name: GetUserByName :one
+SELECT id FROM users WHERE id = $1
+`
+
+func (q *Queries) GetUserByName(ctx context.Context, id string) (string, error) {
+	row := q.db.QueryRowContext(ctx, getUserByName, id)
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getUsernameByID = `-- name: GetUsernameByID :one
 SELECT name FROM users WHERE id = $1
 `
 
-func (q *Queries) GetUsernameByID(ctx context.Context, id uuid.UUID) (string, error) {
+func (q *Queries) GetUsernameByID(ctx context.Context, id string) (string, error) {
 	row := q.db.QueryRowContext(ctx, getUsernameByID, id)
 	var name string
 	err := row.Scan(&name)
 	return name, err
 }
 
-const groupEX = `-- name: GroupEX :one
-SELECT count(*) FROM user_group_rels JOIN groups ON user_group_rels.group_id = groups.id WHERE user_id = $1 AND groups.name = $2
+const initDefaultUG = `-- name: InitDefaultUG :exec
+INSERT INTO user_group_rels (user_id, group_id, permission) VALUES ($1, $2, 0xffff)
 `
 
-type GroupEXParams struct {
-	UserID uuid.UUID
-	Name   string
+type InitDefaultUGParams struct {
+	UserID  string
+	GroupID uuid.UUID
 }
 
-func (q *Queries) GroupEX(ctx context.Context, arg GroupEXParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, groupEX, arg.UserID, arg.Name)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
+func (q *Queries) InitDefaultUG(ctx context.Context, arg InitDefaultUGParams) error {
+	_, err := q.db.ExecContext(ctx, initDefaultUG, arg.UserID, arg.GroupID)
+	return err
 }
 
 const login = `-- name: Login :one
-SELECT id, name, bio, since, email, password FROM users WHERE name = $1 AND password = $2
+SELECT id, name, bio, since, email, password, default_group_id FROM users WHERE id = $1 AND password = $2
 `
 
 type LoginParams struct {
-	Name     string
+	ID       string
 	Password string
 }
 
 func (q *Queries) Login(ctx context.Context, arg LoginParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, login, arg.Name, arg.Password)
+	row := q.db.QueryRowContext(ctx, login, arg.ID, arg.Password)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -185,39 +278,7 @@ func (q *Queries) Login(ctx context.Context, arg LoginParams) (User, error) {
 		&i.Since,
 		&i.Email,
 		&i.Password,
+		&i.DefaultGroupID,
 	)
 	return i, err
-}
-
-const poetExGroup = `-- name: PoetExGroup :one
-SELECT count(*) FROM poet_group_rels JOIN poets ON poet_group_rels.poet_id = poets.id
-WHERE poets.name = $1 AND poet_group_rels.group_id = $2
-`
-
-type PoetExGroupParams struct {
-	Name    string
-	GroupID uuid.UUID
-}
-
-func (q *Queries) PoetExGroup(ctx context.Context, arg PoetExGroupParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, poetExGroup, arg.Name, arg.GroupID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const userEXGroup = `-- name: UserEXGroup :one
-SELECT count(*) from user_group_rels WHERE user_id = $1 AND group_id = $2
-`
-
-type UserEXGroupParams struct {
-	UserID  uuid.UUID
-	GroupID uuid.UUID
-}
-
-func (q *Queries) UserEXGroup(ctx context.Context, arg UserEXGroupParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, userEXGroup, arg.UserID, arg.GroupID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
 }
