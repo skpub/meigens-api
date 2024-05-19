@@ -30,7 +30,6 @@ func AddGroup(c *gin.Context) {
 	ctx := context.Background()
 
 	user_id, _ := c.Get("user_id")
-	user_id_uuid, _ := uuid.Parse(user_id.(string))
 	group_name := c.PostForm("group_name")
 
 	queries := db.New(db_handle)

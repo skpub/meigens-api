@@ -51,7 +51,7 @@ Response &rArr;
 ```json
 {
 	"message": "Successfully added the group.",
-    "group_id": GROUP_ID
+	"group_id": GROUP_ID
 }
 ```
 

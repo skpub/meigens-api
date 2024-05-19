@@ -105,44 +105,6 @@ func AddMeigenToGroup(c *gin.Context) {
 		InternalServerError(c, "DB error" + err2.Error())
 		return
 	}
-
-		// Check if the poet exists in the group.
-		poet_ex_param := db.PoetExGroupParams {
-			Name: poet,
-			GroupID: group_id_uuid,
-		}
-		if count, err := queries.PoetExGroup(ctx, poet_ex_param); err != nil {
-			InternalServerError(c, "DB error")
-		} else if count == 0 {
-			if poet_column_id, err := queries.CreatePoet(ctx, poet); err != nil {
-				InternalServerError(c, "DB error")
-				return
-			} else {
-				poet_group_rel := db.CreatePoetGroupRelParams {
-					PoetID: poet_column_id,
-					GroupID: group_id_uuid,
-				}
-				if err := queries.CreatePoetGroupRel(ctx, poet_group_rel); err != nil {
-					InternalServerError(c, "DB error")
-					return
-				} else {
-					// Successfully added the poet to the group.
-					// Then INSERT the meigen.
-					meigen_params := db.CreateMeigenParams {
-						Meigen: meigen,
-						WhomID: user_id_uuid,
-						GroupID: uuid.NullUUID{ UUID: group_id_uuid, Valid: true },
-						PoetID: poet_column_id,
-					}
-					if err := queries.CreateMeigen(ctx, meigen_params); err != nil {
-						InternalServerError(c, "DB error")
-						return
-					}
-				}
-			}
-		}
-
-	}
 	c.JSON(200, gin.H{
 		"message": "Successfully added the meigen to the group.",
 		"meigen_id": meigen_id,
