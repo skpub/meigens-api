@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"meigens-api/db"
+	"meigens-api/src/controller"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -29,13 +30,9 @@ func Signup(c *gin.Context) {
 	queries := db.New(db_handle)
 
 	// Check if user already exists.
-	if user_id_ex, err := queries.GetUserByName(context.Background(), user_id); err != nil {
-		c.JSON(400, gin.H{
-			"message": "DB error.",
-		})
-		c.Abort()
-		return
-	} else if user_id_ex == user_id {
+	if count_users, err := queries.CheckUserExists(ctx, user_id); err != nil {
+		controller.InternalServerError(c, "DB error")
+	} else if count_users > 0 {
 		c.JSON(400, gin.H{
 			"message": "User already exists.",
 		})
@@ -44,6 +41,13 @@ func Signup(c *gin.Context) {
 	}
 
 	// Create Default group for the user.
+	if _, err := queries.CheckGroupExists(ctx, db.CheckGroupExistsParams{
+		UserID: user_id,
+		Name: user_id + "_DEFAULT",
+	}); err != nil {
+		controller.InternalServerError(c, "DB error")
+	}
+
 	group_id, err := queries.CreateGroup(ctx, user_id + "_DEFAULT")
 	if err != nil {
 		c.JSON(500, gin.H{
@@ -54,11 +58,12 @@ func Signup(c *gin.Context) {
 	}
 
 	// Create new user.
+	password_hash := sha256.Sum256([]byte(password))
 	new_user_params := db.CreateUserParams {
 		ID: user_id,
 		Name: username,
 		Email: email,
-		Password: password,
+		Password: hex.EncodeToString(password_hash[:]),
 		DefaultGroupID: group_id,
 	}
 
@@ -152,8 +157,8 @@ func AuthMiddleware (c *gin.Context) {
 			// }
 				// Authorized
 			c.Set("user_id", claims["user_id"].(string))
-			c.Set("username", claims["username"].(string))
 			c.Next()
+
 		}
 	}
 }
