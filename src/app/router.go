@@ -27,8 +27,11 @@ func SetRouter(db *sql.DB) *gin.Engine {
 	})
 
 	authGroup.GET("/fetch_group_ids", controller.FetchGroups)
+	authGroup.POST("/search_users", controller.SearchUsers)
 	authGroup.POST("/add_group", controller.AddGroup)
 	authGroup.POST("/add_meigen_to_group", controller.AddMeigenToGroup)
+	authGroup.POST("/add_meigen", controller.AddMeigen)
+	authGroup.POST("/follow", controller.Follow)
 
 	// defer db.Close()
 

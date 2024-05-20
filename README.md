@@ -6,9 +6,6 @@ This is the API you can manage 'meigens(名言)'
 
 # API Documentation
 
-Query parameters ending in `_id` means that a uuid is expected to be passed,
-but no string value is expected.
-
 ## Authentication Middleware
 
 ### `POST` /signup
@@ -41,6 +38,33 @@ Response &rArr;
 
 Specify your token `Authentication: [YOUR TOKEN]` in the request header.
 
+### `POST` /auth/search_users
+
+Query Parameters
+
+* `query`
+
+Response &rArr;
+```json
+{
+	"users": [{USER_ID, USERNAME}]
+}
+```
+
+***
+
+### `GET` /auth/fetch_group_ids
+
+Response &rArr;
+```json
+{
+    "group_ids": [GROUP_ID]
+}
+```
+
+***
+
+
 ### `POST` /auth/add_group
 
 Query Parameters
@@ -55,14 +79,24 @@ Response &rArr;
 }
 ```
 
-### `GET` /auth/fetch_group_ids
+***
+
+### `POST` /auth/add_meigen
+
+Query Parameters
+
+* `poet`
+* `meigen`
 
 Response &rArr;
 ```json
 {
-    "group_ids": [GROUP_ID]
+	"message": "Successfully added the meigen.",
+	"group_id": MEIGEN_ID
 }
 ```
+
+***
 
 ### `POST` /auth/add_meigen_to_group
 
@@ -72,6 +106,23 @@ Query Parameters
 * `poet`
 * `meigen`
 
+Response &rArr;
+```json
+{
+	"message": "Successfully added the meigen.",
+	"group_id": MEIGEN_ID
+}
+```
+
+***
+
+### `POST` /auth/follow
+
+Query Parameters
+
+* `target_id`
+
+***
 
 ## ER Diagram
 ![](DB_ER.png)

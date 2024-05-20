@@ -10,6 +10,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type FollowRel struct {
+	FollowerID string
+	FolloweeID string
+}
+
 type Group struct {
 	ID        uuid.UUID
 	Name      string
@@ -31,6 +36,14 @@ type Poet struct {
 	GroupID uuid.UUID
 }
 
+type Reaction struct {
+	ID        uuid.UUID
+	MeigenID  uuid.UUID
+	UserID    string
+	Reaction  int16
+	CreatedAt sql.NullTime
+}
+
 type User struct {
 	ID             string
 	Name           string
@@ -39,6 +52,7 @@ type User struct {
 	Email          string
 	Password       string
 	DefaultGroupID uuid.UUID
+	Private        bool
 }
 
 type UserGroupRel struct {

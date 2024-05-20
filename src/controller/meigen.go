@@ -36,7 +36,7 @@ func AddMeigen(c *gin.Context) {
 	}
 
 	// Create meigen.
-	_, err2 := queries.CreateMeigen(ctx, db.CreateMeigenParams{
+	meigen_id, err2 := queries.CreateMeigen(ctx, db.CreateMeigenParams{
 		Meigen: meigen,
 		WhomID: user_id.(string),
 		GroupID: default_group_id,
@@ -49,6 +49,7 @@ func AddMeigen(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"message": "Successfully added the meigen.",
+		"meigen_id": meigen_id,
 	})
 }
 

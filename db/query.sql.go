@@ -170,6 +170,20 @@ func (q *Queries) DeleteGroup(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const follow = `-- name: Follow :exec
+INSERT INTO follow_rels (follower_id, followee_id) VALUES ($1, $2)
+`
+
+type FollowParams struct {
+	FollowerID string
+	FolloweeID string
+}
+
+func (q *Queries) Follow(ctx context.Context, arg FollowParams) error {
+	_, err := q.db.ExecContext(ctx, follow, arg.FollowerID, arg.FolloweeID)
+	return err
+}
+
 const getDefaultGroupID = `-- name: GetDefaultGroupID :one
 SELECT default_group_id FROM users WHERE id = $1
 `
@@ -260,7 +274,7 @@ func (q *Queries) InitDefaultUG(ctx context.Context, arg InitDefaultUGParams) er
 }
 
 const login = `-- name: Login :one
-SELECT id, name, bio, since, email, password, default_group_id FROM users WHERE id = $1 AND password = $2
+SELECT id, name, bio, since, email, password, default_group_id, private FROM users WHERE id = $1 AND password = $2
 `
 
 type LoginParams struct {
@@ -279,6 +293,39 @@ func (q *Queries) Login(ctx context.Context, arg LoginParams) (User, error) {
 		&i.Email,
 		&i.Password,
 		&i.DefaultGroupID,
+		&i.Private,
 	)
 	return i, err
+}
+
+const searchUsers = `-- name: SearchUsers :many
+SELECT id, name FROM users WHERE name LIKE $1
+`
+
+type SearchUsersRow struct {
+	ID   string
+	Name string
+}
+
+func (q *Queries) SearchUsers(ctx context.Context, name string) ([]SearchUsersRow, error) {
+	rows, err := q.db.QueryContext(ctx, searchUsers, name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchUsersRow
+	for rows.Next() {
+		var i SearchUsersRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

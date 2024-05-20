@@ -11,7 +11,8 @@ CREATE TABLE users (
     since               TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     email               varchar(127) NOT NULL UNIQUE,
     password            TEXT NOT NULL,
-    default_group_id    UUID REFERENCES groups(id) NOT NULL
+    default_group_id    UUID REFERENCES groups(id) NOT NULL,
+    private             BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE user_group_rels (
@@ -21,23 +22,17 @@ CREATE TABLE user_group_rels (
     PRIMARY KEY (user_id, group_id)
 );
 
+CREATE TABLE follow_rels (
+    follower_id     varchar(127) REFERENCES users(id) NOT NULL,
+    followee_id     varchar(127) REFERENCES users(id) NOT NULL,
+    PRIMARY KEY (follower_id, followee_id)
+);
+
 CREATE TABLE poets (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name        varchar(127) NOT NULL,
     group_id    UUID REFERENCES groups(id) NOT NULL
 );
-
--- CREATE TABLE poet_group_rels (
---     poet_id     UUID REFERENCES poets(id) NOT NULL,
---     group_id    UUID REFERENCES groups(id) NOT NULL,
---     PRIMARY KEY (poet_id, group_id)
--- );
-
--- CREATE TABLE poet_user_rels (
---     poet_id     UUID REFERENCES poets(id) NOT NULL,
---     user_id     UUID REFERENCES users(id) NOT NULL,
---     PRIMARY KEY (poet_id, user_id)
--- );
 
 CREATE TABLE meigens (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -46,4 +41,12 @@ CREATE TABLE meigens (
     whom_id     varchar(127) REFERENCES users(id) NOT NULL,
     group_id    UUID REFERENCES groups(id) NOT NULL,
     poet_id     UUID REFERENCES poets(id) NOT NULL
+);
+
+CREATE TABLE reactions (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    meigen_id   UUID REFERENCES meigens(id) NOT NULL,
+    user_id     varchar(127) REFERENCES users(id) NOT NULL,
+    reaction    SMALLINT NOT NULL,
+    created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

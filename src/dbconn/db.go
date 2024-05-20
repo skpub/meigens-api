@@ -5,10 +5,6 @@ import (
 	"fmt"
 	"os"
 	"log"
-
-	// "github.com/uptrace/bun"
-	// "github.com/uptrace/bun/dialect/pgdialect"
-	// "github.com/uptrace/bun/driver/pgdriver"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -31,9 +27,6 @@ func Conn() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// pgdb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
-	// db := bun.NewDB(pgdb, pgdialect.New())
 
 	return db, nil
 }
