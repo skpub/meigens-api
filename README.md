@@ -155,5 +155,22 @@ Response &rArr;
 
 ***
 
+### `POST` /auth/reaction
+
+Query Parameters
+
+* `meigen_id`
+* `reaction` (int32 (enum))
+
+***
+Response &rArr;
+```json
+{
+	"message": "Successfully added the reaction.",
+	"reaction_id": REACTION_ID,
+}
+```
+
+
 ## ER Diagram
 ![](DB_ER.png)

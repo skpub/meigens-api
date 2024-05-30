@@ -43,6 +43,17 @@ func (q *Queries) CheckGroupExists(ctx context.Context, arg CheckGroupExistsPara
 	return count, err
 }
 
+const checkMeigenExists = `-- name: CheckMeigenExists :one
+SELECT count(*) FROM meigens WHERE id = $1
+`
+
+func (q *Queries) CheckMeigenExists(ctx context.Context, id uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkMeigenExists, id)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const checkPoetExists = `-- name: CheckPoetExists :one
 SELECT count(*) FROM poets WHERE name = $1 AND group_id = $2
 `
@@ -57,6 +68,23 @@ func (q *Queries) CheckPoetExists(ctx context.Context, arg CheckPoetExistsParams
 	var count int64
 	err := row.Scan(&count)
 	return count, err
+}
+
+const checkReactionExists = `-- name: CheckReactionExists :one
+SELECT reaction FROM reactions WHERE meigen_id = $1 AND user_id = $2 AND reaction = $3
+`
+
+type CheckReactionExistsParams struct {
+	MeigenID uuid.UUID
+	UserID   string
+	Reaction int32
+}
+
+func (q *Queries) CheckReactionExists(ctx context.Context, arg CheckReactionExistsParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, checkReactionExists, arg.MeigenID, arg.UserID, arg.Reaction)
+	var reaction int32
+	err := row.Scan(&reaction)
+	return reaction, err
 }
 
 const checkUserExists = `-- name: CheckUserExists :one
@@ -131,6 +159,23 @@ type CreatePoetParams struct {
 
 func (q *Queries) CreatePoet(ctx context.Context, arg CreatePoetParams) (uuid.UUID, error) {
 	row := q.db.QueryRowContext(ctx, createPoet, arg.Name, arg.GroupID)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const createReaction = `-- name: CreateReaction :one
+INSERT INTO reactions (meigen_id, user_id, reaction) VALUES ($1, $2, $3) RETURNING id
+`
+
+type CreateReactionParams struct {
+	MeigenID uuid.UUID
+	UserID   string
+	Reaction int32
+}
+
+func (q *Queries) CreateReaction(ctx context.Context, arg CreateReactionParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, createReaction, arg.MeigenID, arg.UserID, arg.Reaction)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err

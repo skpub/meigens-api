@@ -8,10 +8,15 @@ curl -s -X POST -w '\n' -F "username=sato kaito" -F "user_id=skpub" -F "email=sk
 echo -e "\n# Add User kato"
 curl -s -X POST -w '\n' -F "username=kato kiyomasa" -F "user_id=kaki" -F "email=kaki@testmail.com" -F "password=1234" http://localhost:8080/signup
 
-# Obtain Token 
+# Obtain Token (sato)
 echo -e "\n# Obtain Token"
 token=$(curl -s -X POST -F "user_id=skpub" -F "password=123" http://localhost:8080/login | jq -r '.token')
 echo "token: ${token}"
+
+# Otain Token (kato)
+echo -e "\n Obtain Token (kato)"
+token_kato=$(curl -s -X POST -F "user_id=kaki" -F "password=1234" http://localhost:8080/login | jq -r '.token')
+echo "token (kato): ${token_kato}"
 
 # Add Group
 echo -e "\n# Add Group"
@@ -27,7 +32,7 @@ group_id2=$(echo ${group_ids} | jq -r '.[0]')
 
 # Add Meigen
 echo -e "\n# Add Meigen"
-curl -s -X POST -w '\n' -H "Authorization: ${token}" -F "meigen=meigen" -F "poet=poepoe" http://localhost:8080/auth/add_meigen
+meigen_id=$(curl -s -X POST -w '\n' -H "Authorization: ${token}" -F "meigen=meigen" -F "poet=poepoe" http://localhost:8080/auth/add_meigen | jq -r '.meigen_id')
 
 # Add Meigen to the Group
 echo -e "\n# Add Meigen to the Group"
@@ -49,3 +54,8 @@ curl -s -X PATCH -w '\n' -H "Authorization: ${token}" -F "image=@./test.jpg" htt
 # patch group image (sato, new_group)
 echo -e "\n # Patch Group Image (sato, new_group)"
 curl -s -X PATCH -w '\n' -H "Authorization: ${token}" -F "image=@./test.jpg" -F "group_id=${group_id2}" http://localhost:8080/auth/patch_group_image
+
+# create reaction to the meigen (kato -> sato:poepoe)
+echo -e "\n # Create Reaction to the Meigen (kato -> sato:poepoe)"
+curl -s -X POST -w '\n' -H "Authorization: ${token_kato}" -F "reaction=0" -F "meigen_id=${meigen_id}" http://localhost:8080/auth/reaction
+

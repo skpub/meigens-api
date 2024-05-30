@@ -19,6 +19,8 @@ INSERT INTO user_group_rels (user_id, group_id, permission) VALUES ($1, $2, 0xff
 -- name: CreatePoet :one
 INSERT INTO poets (name, group_id) VALUES ($1, $2) RETURNING id;
 
+-- name: CreateReaction :one
+INSERT INTO reactions (meigen_id, user_id, reaction) VALUES ($1, $2, $3) RETURNING id;
 
 -- name: PatchUserImage :one
 UPDATE groups SET img = $2 WHERE id = (
@@ -67,3 +69,8 @@ SELECT * FROM users WHERE id = $1 AND password = $2;
 -- name: GetUsernameByID :one
 SELECT name FROM users WHERE id = $1;
 
+-- name: CheckMeigenExists :one
+SELECT count(*) FROM meigens WHERE id = $1;
+
+-- name: CheckReactionExists :one
+SELECT reaction FROM reactions WHERE meigen_id = $1 AND user_id = $2 AND reaction = $3;

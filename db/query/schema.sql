@@ -48,6 +48,6 @@ CREATE TABLE reactions (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     meigen_id   UUID REFERENCES meigens(id) NOT NULL,
     user_id     varchar(127) REFERENCES users(id) NOT NULL,
-    reaction    SMALLINT NOT NULL,
+    reaction    INTEGER NOT NULL,
     created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

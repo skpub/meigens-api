@@ -41,7 +41,7 @@ type Reaction struct {
 	ID        uuid.UUID
 	MeigenID  uuid.UUID
 	UserID    string
-	Reaction  int16
+	Reaction  int32
 	CreatedAt sql.NullTime
 }
 
