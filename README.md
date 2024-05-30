@@ -124,5 +124,36 @@ Query Parameters
 
 ***
 
+### `PATCH` /auth/path_user_image
+
+Query Parameters
+
+* `image` (Image File (png, jpg))
+
+Response &rArr;
+```json
+{
+	"message": "Successfully patched the user image.",
+}
+```
+
+***
+
+### `PATCH` /auth/path_group_image
+
+Query Parameters
+
+* `group_id`
+* `image` (Image File (png, jpg))
+
+Response &rArr;
+```json
+{
+	"message": "Successfully patched the group image.",
+}
+```
+
+***
+
 ## ER Diagram
 ![](DB_ER.png)
