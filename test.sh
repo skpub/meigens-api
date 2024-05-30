@@ -41,3 +41,7 @@ echo "found_users: ${found_users}"
 # sato Follows kaki
 echo -e "\n# sato Follows kaki"
 curl -s -X POST -w '\n' -H "Authorization: ${token}" -F "target_id=kaki" http://localhost:8080/auth/follow
+
+# patch user image (sato)
+echo -e "\n # Patch User Image (sato)"
+curl -s -X PATCH -w '\n' -H "Authorization: ${token}" -F "image=@./test.jpg" http://localhost:8080/auth/patch_user_image

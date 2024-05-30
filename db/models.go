@@ -19,6 +19,7 @@ type Group struct {
 	ID        uuid.UUID
 	Name      string
 	CreatedAt sql.NullTime
+	Img       []byte
 }
 
 type Meigen struct {

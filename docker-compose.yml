@@ -15,5 +15,13 @@ services:
     environment:
       - POSTGRES_USER=${PG_USER}
       - POSTGRES_PASSWORD=${PG_PASSWORD}
+    # You can add the following lines to enable the query logging
+    # 
+    # command: >
+    #   postgres  -c logging_collector=on
+    #             -c log_directory=/var/lib/postgresql/data/log
+    #             -c log_rotation_age=1d
+    #             -c log_rotation_size=1MB
+    #             -c log_statement=all
 volumes:
   db-store:

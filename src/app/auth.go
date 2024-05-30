@@ -158,7 +158,6 @@ func AuthMiddleware (c *gin.Context) {
 				// Authorized
 			c.Set("user_id", claims["user_id"].(string))
 			c.Next()
-
 		}
 	}
 }

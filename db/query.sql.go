@@ -298,13 +298,32 @@ func (q *Queries) Login(ctx context.Context, arg LoginParams) (User, error) {
 	return i, err
 }
 
+const patchUserImage = `-- name: PatchUserImage :one
+UPDATE groups SET img = $2 WHERE id = (
+    SELECT default_group_id FROM users WHERE users.id = $1)
+    RETURNING id
+`
+
+type PatchUserImageParams struct {
+	ID  string
+	Img []byte
+}
+
+func (q *Queries) PatchUserImage(ctx context.Context, arg PatchUserImageParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, patchUserImage, arg.ID, arg.Img)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const searchUsers = `-- name: SearchUsers :many
-SELECT id, name FROM users WHERE name LIKE $1
+SELECT users.id, users.name, groups.img FROM users JOIN groups ON users.default_group_id = groups.id WHERE users.name LIKE $1
 `
 
 type SearchUsersRow struct {
 	ID   string
 	Name string
+	Img  []byte
 }
 
 func (q *Queries) SearchUsers(ctx context.Context, name string) ([]SearchUsersRow, error) {
@@ -316,7 +335,7 @@ func (q *Queries) SearchUsers(ctx context.Context, name string) ([]SearchUsersRo
 	var items []SearchUsersRow
 	for rows.Next() {
 		var i SearchUsersRow
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name, &i.Img); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

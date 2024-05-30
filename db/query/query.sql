@@ -20,12 +20,18 @@ INSERT INTO user_group_rels (user_id, group_id, permission) VALUES ($1, $2, 0xff
 INSERT INTO poets (name, group_id) VALUES ($1, $2) RETURNING id;
 
 
+-- name: PatchUserImage :one
+UPDATE groups SET img = $2 WHERE id = (
+    SELECT default_group_id FROM users WHERE users.id = $1)
+    RETURNING id;
+
+
 -- name: DeleteGroup :exec
 DELETE FROM groups WHERE id = $1;
 
 
 -- name: SearchUsers :many
-SELECT id, name FROM users WHERE name LIKE $1;
+SELECT users.id, users.name, groups.img FROM users JOIN groups ON users.default_group_id = groups.id WHERE users.name LIKE $1;
 
 -- name: GetDefaultGroupID :one
 SELECT default_group_id FROM users WHERE id = $1;

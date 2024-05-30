@@ -1,7 +1,8 @@
 CREATE TABLE groups (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name        varchar(127) NOT NULL,
-    created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    img         bytea
 );
 
 CREATE TABLE users (
