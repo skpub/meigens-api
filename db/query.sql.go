@@ -71,7 +71,7 @@ func (q *Queries) CheckUserExists(ctx context.Context, id string) (int64, error)
 }
 
 const checkUserExistsGroup = `-- name: CheckUserExistsGroup :one
-SELECT count(*) from user_group_rels WHERE user_id = $1 AND group_id = $2
+SELECT permission from user_group_rels WHERE user_id = $1 AND group_id = $2
 `
 
 type CheckUserExistsGroupParams struct {
@@ -79,11 +79,11 @@ type CheckUserExistsGroupParams struct {
 	GroupID uuid.UUID
 }
 
-func (q *Queries) CheckUserExistsGroup(ctx context.Context, arg CheckUserExistsGroupParams) (int64, error) {
+func (q *Queries) CheckUserExistsGroup(ctx context.Context, arg CheckUserExistsGroupParams) (int16, error) {
 	row := q.db.QueryRowContext(ctx, checkUserExistsGroup, arg.UserID, arg.GroupID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
+	var permission int16
+	err := row.Scan(&permission)
+	return permission, err
 }
 
 const createGroup = `-- name: CreateGroup :one
@@ -296,6 +296,20 @@ func (q *Queries) Login(ctx context.Context, arg LoginParams) (User, error) {
 		&i.Private,
 	)
 	return i, err
+}
+
+const patchGroupImage = `-- name: PatchGroupImage :exec
+UPDATE groups SET img = $2 WHERE id = $1
+`
+
+type PatchGroupImageParams struct {
+	ID  uuid.UUID
+	Img []byte
+}
+
+func (q *Queries) PatchGroupImage(ctx context.Context, arg PatchGroupImageParams) error {
+	_, err := q.db.ExecContext(ctx, patchGroupImage, arg.ID, arg.Img)
+	return err
 }
 
 const patchUserImage = `-- name: PatchUserImage :one

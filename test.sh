@@ -45,3 +45,7 @@ curl -s -X POST -w '\n' -H "Authorization: ${token}" -F "target_id=kaki" http://
 # patch user image (sato)
 echo -e "\n # Patch User Image (sato)"
 curl -s -X PATCH -w '\n' -H "Authorization: ${token}" -F "image=@./test.jpg" http://localhost:8080/auth/patch_user_image
+
+# patch group image (sato, new_group)
+echo -e "\n # Patch Group Image (sato, new_group)"
+curl -s -X PATCH -w '\n' -H "Authorization: ${token}" -F "image=@./test.jpg" -F "group_id=${group_id2}" http://localhost:8080/auth/patch_group_image

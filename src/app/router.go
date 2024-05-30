@@ -33,6 +33,7 @@ func SetRouter(db *sql.DB) *gin.Engine {
 	authGroup.POST("/add_meigen", controller.AddMeigen)
 	authGroup.POST("/follow", controller.Follow)
 	authGroup.PATCH("/patch_user_image", controller.PatchUserImage)
+	authGroup.PATCH("/patch_group_image", controller.PatchGroupImage)
 
 	// defer db.Close()
 

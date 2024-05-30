@@ -25,6 +25,9 @@ UPDATE groups SET img = $2 WHERE id = (
     SELECT default_group_id FROM users WHERE users.id = $1)
     RETURNING id;
 
+-- name: PatchGroupImage :exec
+UPDATE groups SET img = $2 WHERE id = $1;
+
 
 -- name: DeleteGroup :exec
 DELETE FROM groups WHERE id = $1;
@@ -46,7 +49,7 @@ SELECT count(*) FROM poets WHERE name = $1 AND group_id = $2;
 SELECT group_id from user_group_rels WHERE user_id = $1;
 
 -- name: CheckUserExistsGroup :one
-SELECT count(*) from user_group_rels WHERE user_id = $1 AND group_id = $2;
+SELECT permission from user_group_rels WHERE user_id = $1 AND group_id = $2;
 
 -- name: CheckGroupExists :one
 SELECT count(*) FROM user_group_rels JOIN groups ON user_group_rels.group_id = groups.id
