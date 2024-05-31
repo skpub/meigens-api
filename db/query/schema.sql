@@ -1,7 +1,7 @@
 CREATE TABLE groups (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name        varchar(127) NOT NULL,
-    created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
     img         bytea
 );
 
@@ -9,7 +9,7 @@ CREATE TABLE users (
     id                  varchar(127) PRIMARY KEY NOT NULL,
     name                varchar(127) NOT NULL,
     bio                 varchar(511),
-    since               TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    since               TIMESTAMPTZ DEFAULT NOW(),
     email               varchar(127) NOT NULL UNIQUE,
     password            TEXT NOT NULL,
     default_group_id    UUID REFERENCES groups(id) NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE poets (
 CREATE TABLE meigens (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     meigen      TEXT NOT NULL,
-    created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
     whom_id     varchar(127) REFERENCES users(id) NOT NULL,
     group_id    UUID REFERENCES groups(id) NOT NULL,
     poet_id     UUID REFERENCES poets(id) NOT NULL
@@ -49,5 +49,5 @@ CREATE TABLE reactions (
     meigen_id   UUID REFERENCES meigens(id) NOT NULL,
     user_id     varchar(127) REFERENCES users(id) NOT NULL,
     reaction    INTEGER NOT NULL,
-    created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at  TIMESTAMPTZ DEFAULT NOW()
 );

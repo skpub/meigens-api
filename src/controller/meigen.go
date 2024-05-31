@@ -26,6 +26,17 @@ func AddMeigen(c *gin.Context) {
 		return
 	}
 
+	// Check if the meigen already exists.
+	if count, err := queries.CheckMeigenExistsByMeigen(ctx, db.CheckMeigenExistsByMeigenParams{
+		Meigen: meigen,
+		WhomID: user_id.(string),
+		GroupID: default_group_id,
+		Name: poet,
+	}); err != nil || count > 0{
+		BadRequest(c, "Meigen already exists.")
+		return
+	}
+
 	// Create poet if not exists.
 	poet_column_id, err1 := queries.CreatePoet(
 		ctx, db.CreatePoetParams{Name: poet, GroupID: default_group_id})
@@ -73,6 +84,17 @@ func AddMeigenToGroup(c *gin.Context) {
 		return
 	}
 	// User has the permission to add the meigen to specified group.
+
+	// Check if the meigen already exists.
+	if count, err := queries.CheckMeigenExistsByMeigen(ctx, db.CheckMeigenExistsByMeigenParams{
+		Meigen: meigen,
+		WhomID: user_id.(string),
+		GroupID: group_id,
+		Name: poet,
+	}); err != nil || count > 0{
+		BadRequest(c, "Meigen already exists.")
+		return
+	}
 
 	var poet_id uuid.UUID
 	// Check if the poet already exists.

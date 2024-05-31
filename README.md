@@ -171,6 +171,20 @@ Response &rArr;
 }
 ```
 
+### `GET` /auth/fetch_tl
+
+* `before` (unixtime)
+
+Response &rArr;
+```json
+{
+}
+```
+
+
+
+***
+
 
 ## ER Diagram
 ![](DB_ER.png)

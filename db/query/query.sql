@@ -35,6 +35,16 @@ UPDATE groups SET img = $2 WHERE id = $1;
 DELETE FROM groups WHERE id = $1;
 
 
+-- name: FetchTL :many
+SELECT meigens.meigen, meigens.whom_id, poets.name FROM meigens
+    JOIN follow_rels ON meigens.whom_id = follow_rels.followee_id
+    JOIN groups ON meigens.group_id = groups.id
+    JOIN users ON meigens.whom_id = users.id
+    JOIN poets ON meigens.poet_id = poets.id
+    WHERE follow_rels.follower_id = $1
+        AND users.default_group_id = groups.id
+        AND meigens.created_at < $3 ORDER BY meigens.created_at DESC LIMIT $2;
+
 -- name: SearchUsers :many
 SELECT users.id, users.name, groups.img FROM users JOIN groups ON users.default_group_id = groups.id WHERE users.name LIKE $1;
 
@@ -71,6 +81,10 @@ SELECT name FROM users WHERE id = $1;
 
 -- name: CheckMeigenExists :one
 SELECT count(*) FROM meigens WHERE id = $1;
+
+-- name: CheckMeigenExistsByMeigen :one
+SELECT count(*) FROM meigens JOIN poets ON meigens.poet_id = poets.id
+    WHERE meigens.meigen = $1 AND meigens.whom_id = $2 AND meigens.group_id = $3 AND poets.name = $4;
 
 -- name: CheckReactionExists :one
 SELECT reaction FROM reactions WHERE meigen_id = $1 AND user_id = $2 AND reaction = $3;

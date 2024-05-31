@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -49,6 +50,30 @@ SELECT count(*) FROM meigens WHERE id = $1
 
 func (q *Queries) CheckMeigenExists(ctx context.Context, id uuid.UUID) (int64, error) {
 	row := q.db.QueryRowContext(ctx, checkMeigenExists, id)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const checkMeigenExistsByMeigen = `-- name: CheckMeigenExistsByMeigen :one
+SELECT count(*) FROM meigens JOIN poets ON meigens.poet_id = poets.id
+    WHERE meigens.meigen = $1 AND meigens.whom_id = $2 AND meigens.group_id = $3 AND poets.name = $4
+`
+
+type CheckMeigenExistsByMeigenParams struct {
+	Meigen  string
+	WhomID  string
+	GroupID uuid.UUID
+	Name    string
+}
+
+func (q *Queries) CheckMeigenExistsByMeigen(ctx context.Context, arg CheckMeigenExistsByMeigenParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkMeigenExistsByMeigen,
+		arg.Meigen,
+		arg.WhomID,
+		arg.GroupID,
+		arg.Name,
+	)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -213,6 +238,52 @@ DELETE FROM groups WHERE id = $1
 func (q *Queries) DeleteGroup(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, deleteGroup, id)
 	return err
+}
+
+const fetchTL = `-- name: FetchTL :many
+SELECT meigens.meigen, meigens.whom_id, poets.name FROM meigens
+    JOIN follow_rels ON meigens.whom_id = follow_rels.followee_id
+    JOIN groups ON meigens.group_id = groups.id
+    JOIN users ON meigens.whom_id = users.id
+    JOIN poets ON meigens.poet_id = poets.id
+    WHERE follow_rels.follower_id = $1
+        AND users.default_group_id = groups.id
+        AND meigens.created_at < $3 ORDER BY meigens.created_at DESC LIMIT $2
+`
+
+type FetchTLParams struct {
+	FollowerID string
+	Limit      int32
+	CreatedAt  sql.NullTime
+}
+
+type FetchTLRow struct {
+	Meigen string
+	WhomID string
+	Name   string
+}
+
+func (q *Queries) FetchTL(ctx context.Context, arg FetchTLParams) ([]FetchTLRow, error) {
+	rows, err := q.db.QueryContext(ctx, fetchTL, arg.FollowerID, arg.Limit, arg.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FetchTLRow
+	for rows.Next() {
+		var i FetchTLRow
+		if err := rows.Scan(&i.Meigen, &i.WhomID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const follow = `-- name: Follow :exec

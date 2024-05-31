@@ -30,9 +30,13 @@ echo "group_ids: ${group_ids}"
 
 group_id2=$(echo ${group_ids} | jq -r '.[0]')
 
-# Add Meigen
+# Add Meigen (sato)
 echo -e "\n# Add Meigen"
 meigen_id=$(curl -s -X POST -w '\n' -H "Authorization: ${token}" -F "meigen=meigen" -F "poet=poepoe" http://localhost:8080/auth/add_meigen | jq -r '.meigen_id')
+
+# Add Meigen (kato)
+echo -e "\n# Add Meigen (kato)"
+meigen_id2=$(curl -s -X POST -w '\n' -H "Authorization: ${token_kato}" -F "meigen=meigen2" -F "poet=poepoe" http://localhost:8080/auth/add_meigen | jq -r '.meigen_id')
 
 # Add Meigen to the Group
 echo -e "\n# Add Meigen to the Group"
@@ -59,3 +63,10 @@ curl -s -X PATCH -w '\n' -H "Authorization: ${token}" -F "image=@./test.jpg" -F 
 echo -e "\n # Create Reaction to the Meigen (kato -> sato:poepoe)"
 curl -s -X POST -w '\n' -H "Authorization: ${token_kato}" -F "reaction=0" -F "meigen_id=${meigen_id}" http://localhost:8080/auth/reaction
 
+# Fetch TL
+echo -e "\n # Fetch TL of sato (before null)"
+curl -s -X GET -w '\n' -H "Authorization: ${token}" -F "before=null" http://localhost:8080/auth/fetch_tl
+echo -e "\n # Fetch TL of sato (before 9999/01/01)"
+curl -s -X GET -w '\n' -H "Authorization: ${token}" -F "before=253370732400" http://localhost:8080/auth/fetch_tl
+echo -e "\n # Fetch TL of sato (before 1970/01/01)"
+curl -s -X GET -w '\n' -H "Authorization: ${token}" -F "before=0" http://localhost:8080/auth/fetch_tl
