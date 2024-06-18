@@ -6,7 +6,7 @@ This is the API you can manage 'meigens(名言)'
 
 # API Documentation
 
-## Authentication Middleware
+## Authorization Middleware
 
 ### `POST` /signup
 
@@ -34,9 +34,9 @@ Response &rArr;
 
 ## Application
 
-**Authentication required.**
+** Authorization required.**
 
-Specify your token `Authentication: [YOUR TOKEN]` in the request header.
+Specify your token `Authorization: [YOUR TOKEN]` in the request header.
 
 ### `POST` /auth/search_users
 
