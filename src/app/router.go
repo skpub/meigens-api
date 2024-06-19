@@ -2,15 +2,10 @@ package app
 
 import (
 	"database/sql"
-	"log"
 	"meigens-api/src/controller"
 
-	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 )
-
-var clients = treemap.NewWithStringComparator()
 
 func SetRouter(db *sql.DB) *gin.Engine {
 	r := gin.Default()
@@ -31,32 +26,7 @@ func SetRouter(db *sql.DB) *gin.Engine {
 		})
 	})
 
-	socketUpgrader := websocket.Upgrader {
-		ReadBufferSize: 1024,
-		WriteBufferSize: 1024,
-	}
-	authGroup.GET("/socket", func(ctx *gin.Context) {
-		user_id := ctx.MustGet("user_id").(string)
-		conn, err := socketUpgrader.Upgrade(ctx.Writer, ctx.Request, nil)
-		if err != nil {
-			log.Printf("Failed to set websocket upgrade: %+v", err)
-			return
-		}
-		clients.Put(user_id, conn)
-		// 以下の処理についていずれはMutexを考慮して書く必要があるよ。
-		for {
-			t, msg, err := conn.ReadMessage()	
-			if err != nil {
-				log.Printf("Failed to read message: %+v", err)
-				break
-			}
-			it := clients.Iterator()
-			for it.Next() {
-				it.Value().(*websocket.Conn).WriteMessage(t, msg)
-			}
-		}
-	})
-
+	authGroup.GET("/socket", controller.TLSocket)
 	authGroup.GET("/fetch_group_ids", controller.FetchGroups)
 	authGroup.GET("/fetch_tl", controller.FetchTL)
 	authGroup.POST("/search_users", controller.SearchUsers)

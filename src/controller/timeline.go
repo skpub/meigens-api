@@ -3,13 +3,83 @@ package controller
 import (
 	"context"
 	"database/sql"
+	"log"
+	"sync"
+
 	// "math"
 	"meigens-api/db"
 	"strconv"
 	"time"
 
+	"github.com/emirpasic/gods/maps/treemap"
+	"github.com/emirpasic/gods/sets/hashset"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 )
+
+var mtx sync.Mutex
+var clients = treemap.NewWithStringComparator()
+// user_id: hashset of conn
+// user couuld have multiple connections so we need to store them in a slice.
+
+var socketUpgrader = websocket.Upgrader {
+	ReadBufferSize: 1024,
+	WriteBufferSize: 1024,
+}
+
+func removeUserFromClients(user_id string, conn *websocket.Conn) {
+	mtx.Lock()
+	connections, not_found := clients.Get(user_id)
+	if !not_found {
+		connections.(*hashset.Set).Remove(conn)
+	}
+	if connections.(*hashset.Set).Size() == 0 {
+		clients.Remove(user_id)
+	}
+	mtx.Unlock()
+}
+
+func TLSocket(ctx *gin.Context) {
+	user_id := ctx.MustGet("user_id").(string)
+	conn, err := socketUpgrader.Upgrade(ctx.Writer, ctx.Request, nil)
+	if err != nil {
+		log.Printf("Failed to set websocket upgrade: %+v", err)
+		return
+	}
+	mtx.Lock()
+	connections, not_first := clients.Get(user_id)
+	// connections: nil or hashset of conn
+	if !not_first {
+		var connections_set = hashset.New()
+		connections_set.Add(conn)
+		clients.Put(user_id, connections_set)
+	} else {
+		connections.(*hashset.Set).Add(conn)
+		// conections is a pointer to hashset.
+		// so this operation is reflected to the clients.
+	}
+	mtx.Unlock()
+	for {
+		t, msg, err := conn.ReadMessage()	
+		if err != nil {
+			log.Printf("Failed to read message: %+v", err)
+			removeUserFromClients(user_id, conn)
+			break
+		}
+		mtx.Lock()
+		it := clients.Iterator()
+		// it.Key(): user_id, it.Value(): hashset of conn
+		mtx.Unlock()
+		for it.Next() {
+			for _, conn := range it.Value().(*hashset.Set).Values() {
+				conn := conn.(*websocket.Conn)
+				conn.WriteMessage(t, msg)
+			}
+		}
+	}
+	// clean
+	removeUserFromClients(user_id, conn)
+}
 
 func FetchTL(c *gin.Context) {
 	db_handle := c.MustGet("db").(*sql.DB)
