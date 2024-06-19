@@ -27,7 +27,7 @@ var socketUpgrader = websocket.Upgrader {
 	WriteBufferSize: 1024,
 }
 
-func removeUserFromClients(user_id string, conn *websocket.Conn) {
+func removeClientFromClients(user_id string, conn *websocket.Conn) {
 	mtx.Lock()
 	connections, not_found := clients.Get(user_id)
 	if !not_found {
@@ -63,7 +63,7 @@ func TLSocket(ctx *gin.Context) {
 		t, msg, err := conn.ReadMessage()	
 		if err != nil {
 			log.Printf("Failed to read message: %+v", err)
-			removeUserFromClients(user_id, conn)
+			removeClientFromClients(user_id, conn)
 			break
 		}
 		mtx.Lock()
@@ -78,7 +78,7 @@ func TLSocket(ctx *gin.Context) {
 		}
 	}
 	// clean
-	removeUserFromClients(user_id, conn)
+	removeClientFromClients(user_id, conn)
 }
 
 func FetchTL(c *gin.Context) {

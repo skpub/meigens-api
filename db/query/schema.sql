@@ -23,11 +23,15 @@ CREATE TABLE user_group_rels (
     PRIMARY KEY (user_id, group_id)
 );
 
+CREATE INDEX ON user_group_rels(user_id COLLATE "unicode");
+
 CREATE TABLE follow_rels (
     follower_id     varchar(127) REFERENCES users(id) NOT NULL,
     followee_id     varchar(127) REFERENCES users(id) NOT NULL,
     PRIMARY KEY (follower_id, followee_id)
 );
+
+CREATE INDEX ON follow_rels(follower_id COLLATE "unicode");
 
 CREATE TABLE poets (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
