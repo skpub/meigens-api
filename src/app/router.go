@@ -3,6 +3,7 @@ package app
 import (
 	"database/sql"
 	"meigens-api/src/controller"
+	"meigens-api/src/controller/socket"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,7 +27,7 @@ func SetRouter(db *sql.DB) *gin.Engine {
 		})
 	})
 
-	authGroup.GET("/socket", controller.TLSocket)
+	authGroup.GET("/socket", socket.TLSocket)
 	authGroup.GET("/fetch_group_ids", controller.FetchGroups)
 	authGroup.GET("/fetch_tl", controller.FetchTL)
 	authGroup.POST("/search_users", controller.SearchUsers)

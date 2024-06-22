@@ -311,6 +311,33 @@ func (q *Queries) GetDefaultGroupID(ctx context.Context, id string) (uuid.UUID, 
 	return default_group_id, err
 }
 
+const getFollowers = `-- name: GetFollowers :many
+SELECT follower_id FROM follow_rels WHERE followee_id = $1 ORDER BY follower_id
+`
+
+func (q *Queries) GetFollowers(ctx context.Context, followeeID string) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, getFollowers, followeeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var follower_id string
+		if err := rows.Scan(&follower_id); err != nil {
+			return nil, err
+		}
+		items = append(items, follower_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getGroupsParticipated = `-- name: GetGroupsParticipated :many
 SELECT group_id from user_group_rels WHERE user_id = $1
 `

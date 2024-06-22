@@ -45,6 +45,9 @@ SELECT meigens.meigen, meigens.whom_id, poets.name FROM meigens
         AND users.default_group_id = groups.id
         AND meigens.created_at < $3 ORDER BY meigens.created_at DESC LIMIT $2;
 
+-- name: GetFollowers :many
+SELECT follower_id FROM follow_rels WHERE followee_id = $1 ORDER BY follower_id;
+
 -- name: SearchUsers :many
 SELECT users.id, users.name, groups.img FROM users JOIN groups ON users.default_group_id = groups.id WHERE users.name LIKE $1;
 

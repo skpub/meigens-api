@@ -208,15 +208,29 @@ Therefore, this endpoint has been upgraded to WebSocket,
 and you need to use this socket to communicate with the meigens-api when posting or fetching a meigen.
 
 
-#### client to server (or server to client) data format:
+#### client to server data format:
 
 ```csv
-[0-1], JSON DATA
+[0-2], JSON DATA
 ```
 
 instructions:
 
-- 0 => Post the meigen as your posts.
+- 0 => Send TL state.
+
+payload will be
+
+```json
+{
+	"state": [0-1]
+	// 0 => Global TL (All meigens will be fetched).
+	// 1 => Local TL (the meigens from the users you follow or from the groups you've participeted in will be fetched.)
+}
+```
+
+#### client to server (or server to client) data format:
+
+- 1 => Post the meigen as your posts.
 
 payload will be
 
@@ -227,7 +241,7 @@ payload will be
 }
 ```
 
-- 1 => Post the meigen as specified group's post.
+- 2 => Post the meigen as specified group's post.
 
 payload will be
 
