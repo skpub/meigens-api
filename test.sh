@@ -18,6 +18,16 @@ echo -e "\n Obtain Token (kato)"
 token_kato=$(curl -s -X POST -F "user_id=kaki" -F "password=1234" http://localhost:8080/login | jq -r '.token')
 echo "token (kato): ${token_kato}"
 
+# Search User
+echo -e "\n# Search k (%k%)"
+found_users=$(curl -s -X POST -H "Authorization: ${token}" -F "query=k" http://localhost:8080/auth/search_users | jq -r '.found_users')
+echo "found_users: ${found_users}"
+
+# Fetch User img
+echo -e "\n# Fetch User Image"
+user_imgs=$(curl -s -X GET -H "Authorization: ${token}" http://localhost:8080/auth/fetch_user_imgs?user_ids=skpub,kaki)
+echo "user_imgs: ${user_imgs}"
+
 # Add Group
 echo -e "\n# Add Group"
 group_id=$(curl -s -X POST -H "Authorization: ${token}" -F "group_name=new_group" http://localhost:8080/auth/add_group | jq -r '.group_id')
@@ -42,11 +52,6 @@ meigen_id2=$(curl -s -X POST -w '\n' -H "Authorization: ${token_kato}" -F "meige
 echo -e "\n# Add Meigen to the Group"
 curl -s -X POST -w '\n' -H "Authorization: ${token}" -F "group_id=${group_id2}" -F "meigen=meigen" -F "poet=poepoe" http://localhost:8080/auth/add_meigen_to_group
 
-# Search User
-echo -e "\n# Search k (%k%)"
-found_users=$(curl -s -X POST -H "Authorization: ${token}" -F "query=k" http://localhost:8080/auth/search_users | jq -r '.found_users')
-echo "found_users: ${found_users}"
-
 # sato Follows kaki
 echo -e "\n# sato Follows kaki"
 curl -s -X POST -w '\n' -H "Authorization: ${token}" -F "target_id=kaki" http://localhost:8080/auth/follow
@@ -65,8 +70,8 @@ curl -s -X POST -w '\n' -H "Authorization: ${token_kato}" -F "reaction=0" -F "me
 
 # Fetch TL
 echo -e "\n # Fetch TL of sato (before null)"
-curl -s -X GET -w '\n' -H "Authorization: ${token}" -F "before=null" http://localhost:8080/auth/fetch_tl
+curl -s -X GET -w '\n' -H "Authorization: ${token}" http://localhost:8080/auth/fetch_tl?before=null
 echo -e "\n # Fetch TL of sato (before 9999/01/01)"
-curl -s -X GET -w '\n' -H "Authorization: ${token}" -F "before=253370732400" http://localhost:8080/auth/fetch_tl
+curl -s -X GET -w '\n' -H "Authorization: ${token}" http://localhost:8080/auth/fetch_tl?before=253370732400
 echo -e "\n # Fetch TL of sato (before 1970/01/01)"
-curl -s -X GET -w '\n' -H "Authorization: ${token}" -F "before=0" http://localhost:8080/auth/fetch_tl
+curl -s -X GET -w '\n' -H "Authorization: ${token}" http://localhost:8080/auth/fetch_tl?before=0

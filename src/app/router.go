@@ -30,6 +30,7 @@ func SetRouter(db *sql.DB) *gin.Engine {
 	authGroup.GET("/socket", socket.TLSocket)
 	authGroup.GET("/fetch_group_ids", controller.FetchGroups)
 	authGroup.GET("/fetch_tl", controller.FetchTL)
+	authGroup.GET("/fetch_user_imgs", controller.FetchUserImgs)
 	authGroup.POST("/search_users", controller.SearchUsers)
 	authGroup.POST("/add_group", controller.AddGroup)
 	authGroup.POST("/add_meigen_to_group", controller.AddMeigenToGroup)

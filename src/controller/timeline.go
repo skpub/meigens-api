@@ -18,7 +18,7 @@ func FetchTL(c *gin.Context) {
 	ctx := context.Background()
 
 	user_id := c.MustGet("user_id").(string)
-	before := c.PostForm("before")
+	before := c.Query("before")
 	var before_u int64
 	if before == "" || before == "null" || before == "nil" {
 		// before now+epsilon, that's mean all contents are expected to fetch.

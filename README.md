@@ -24,7 +24,7 @@ TODO: そのうち全部Dockerで管理するようにしたい.
 
 ### `POST` /signup
 
-Query Parameters
+Post Parameters
 
 * `username`
 * `user_id`
@@ -33,7 +33,7 @@ Query Parameters
 
 ### `POST` /login
 
-Query Parameters
+Post Parameters
 
 * `user_id`
 * `password`
@@ -54,7 +54,7 @@ Specify your token `Authorization: [YOUR TOKEN]` in the request header.
 
 ### `POST` /auth/search_users
 
-Query Parameters
+Post Parameters
 
 * `query`
 
@@ -81,7 +81,7 @@ Response &rArr;
 
 ### `POST` /auth/add_group
 
-Query Parameters
+Post Parameters
 
 * `group_name`
 
@@ -97,7 +97,7 @@ Response &rArr;
 
 ### `POST` /auth/add_meigen
 
-Query Parameters
+Post Parameters
 
 * `poet`
 * `meigen`
@@ -114,7 +114,7 @@ Response &rArr;
 
 ### `POST` /auth/add_meigen_to_group
 
-Query Parameters
+Post Parameters
 
 * `group_id` (Can be obtained by calling `/auth/fetch_group_ids`)
 * `poet`
@@ -132,7 +132,7 @@ Response &rArr;
 
 ### `POST` /auth/follow
 
-Query Parameters
+Post Parameters
 
 * `target_id`
 
@@ -140,7 +140,7 @@ Query Parameters
 
 ### `PATCH` /auth/patch_user_image
 
-Query Parameters
+Post Parameters
 
 * `image` (Image File (png, jpg))
 
@@ -155,7 +155,7 @@ Response &rArr;
 
 ### `PATCH` /auth/path_group_image
 
-Query Parameters
+Post Parameters
 
 * `group_id`
 * `image` (Image File (png, jpg))
@@ -171,7 +171,7 @@ Response &rArr;
 
 ### `POST` /auth/reaction
 
-Query Parameters
+Post Parameters
 
 * `meigen_id`
 * `reaction` (int32 (enum))
@@ -187,12 +187,31 @@ Response &rArr;
 
 ### `GET` /auth/fetch_tl
 
+Query Parameters
+
 * `before` (unixtime)
 
 Response &rArr;
 ```json
 {
-	"contents": ["MEIGEN", "WHOM(user) ID", "POET NAME"]
+	"contents": [
+		{"MEIGEN": MEIGEN, "WhomID" USER_ID: , "Name": POET_NAME}
+	]
+}
+```
+
+### `GET` /auth/fetch_user_imgs
+
+Query Parameters
+
+* `user_ids` (comma-separated)
+
+Response &rArr;
+```json
+{
+	"contents": [
+		{"UserID": USER_ID, "Img": IMG(BLOB)}
+	]
 }
 ```
 

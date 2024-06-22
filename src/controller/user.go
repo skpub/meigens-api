@@ -7,6 +7,7 @@ import (
 	"image"
 	_ "image/jpeg"
 	"image/png"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -153,5 +154,24 @@ func Follow(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{
 		"message": "Successfully followed \"" + target_id + "\".",
+	})
+}
+
+func FetchUserImgs(c *gin.Context) {
+	db_handle := c.MustGet("db").(*sql.DB)
+	ctx := context.Background()
+	queries := db.New(db_handle)
+
+	user_ids_str := c.Query("user_ids")
+	user_ids := strings.Split(user_ids_str, ",")
+	user_imgs := make(map[string][]byte)
+	for _, user_id := range user_ids {
+		img, err := queries.GetUserImg(ctx, user_id)
+		if err == nil {
+			user_imgs[user_id] = img
+		}
+	}
+	c.JSON(200, gin.H{
+		"contents": user_imgs,
 	})
 }

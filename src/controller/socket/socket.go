@@ -172,14 +172,14 @@ func SendMessage(recipients_candidate []string, msg []byte) {
 	// Both are sorted.
 	// So this algorithm can be used. O(max(len(A), len(B)))
 	/*
-		    A, B: sorted.
-			====
-			for i = 0 to len(A)
-				for j = i to len(B)
-				if A[i] == B[j] then C.append(v)
-				else if A[i] < B[j] then continue
-			====
-			C: result.
+		A, B: sorted.
+		====
+		for i = 0 to len(A)
+			for j = i to len(B)
+			if A[i] == B[j] then C.append(v)
+			else if A[i] < B[j] then continue
+		====
+		C: result.
 	*/
 	resipients := hashset.New()
 	it := clients.Iterator()

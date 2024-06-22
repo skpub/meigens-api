@@ -407,6 +407,17 @@ func (q *Queries) GetUserByName(ctx context.Context, id string) (string, error) 
 	return id, err
 }
 
+const getUserImg = `-- name: GetUserImg :one
+SELECT img FROM groups WHERE id = (SELECT default_group_id FROM users WHERE users.id = $1)
+`
+
+func (q *Queries) GetUserImg(ctx context.Context, id string) ([]byte, error) {
+	row := q.db.QueryRowContext(ctx, getUserImg, id)
+	var img []byte
+	err := row.Scan(&img)
+	return img, err
+}
+
 const getUsernameByID = `-- name: GetUsernameByID :one
 SELECT name FROM users WHERE id = $1
 `

@@ -94,3 +94,6 @@ SELECT count(*) FROM meigens JOIN poets ON meigens.poet_id = poets.id
 
 -- name: CheckReactionExists :one
 SELECT reaction FROM reactions WHERE meigen_id = $1 AND user_id = $2 AND reaction = $3;
+
+-- name: GetUserImg :one
+SELECT img FROM groups WHERE id = (SELECT default_group_id FROM users WHERE users.id = $1);
