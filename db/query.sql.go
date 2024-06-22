@@ -80,7 +80,7 @@ func (q *Queries) CheckMeigenExistsByMeigen(ctx context.Context, arg CheckMeigen
 }
 
 const checkPoetExists = `-- name: CheckPoetExists :one
-SELECT count(*) FROM poets WHERE name = $1 AND group_id = $2
+SELECT id FROM poets WHERE name = $1 AND group_id = $2
 `
 
 type CheckPoetExistsParams struct {
@@ -88,11 +88,11 @@ type CheckPoetExistsParams struct {
 	GroupID uuid.UUID
 }
 
-func (q *Queries) CheckPoetExists(ctx context.Context, arg CheckPoetExistsParams) (int64, error) {
+func (q *Queries) CheckPoetExists(ctx context.Context, arg CheckPoetExistsParams) (uuid.UUID, error) {
 	row := q.db.QueryRowContext(ctx, checkPoetExists, arg.Name, arg.GroupID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
 }
 
 const checkReactionExists = `-- name: CheckReactionExists :one
@@ -151,7 +151,7 @@ func (q *Queries) CreateGroup(ctx context.Context, name string) (uuid.UUID, erro
 }
 
 const createMeigen = `-- name: CreateMeigen :one
-INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4) RETURNING id
+INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING meigens.id
 `
 
 type CreateMeigenParams struct {
@@ -366,7 +366,7 @@ func (q *Queries) GetGroupsParticipated(ctx context.Context, userID string) ([]u
 }
 
 const getPoetID = `-- name: GetPoetID :one
-SELECT id FROM poets WHERE name = $1 AND group_id = $2
+INSERT INTO poets (name, group_id) VALUES ($1, $2) RETURNING id
 `
 
 type GetPoetIDParams struct {
@@ -376,6 +376,22 @@ type GetPoetIDParams struct {
 
 func (q *Queries) GetPoetID(ctx context.Context, arg GetPoetIDParams) (uuid.UUID, error) {
 	row := q.db.QueryRowContext(ctx, getPoetID, arg.Name, arg.GroupID)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getPoetIDGroup = `-- name: GetPoetIDGroup :one
+SELECT id FROM poets WHERE name = $1 AND group_id = $2
+`
+
+type GetPoetIDGroupParams struct {
+	Name    string
+	GroupID uuid.UUID
+}
+
+func (q *Queries) GetPoetIDGroup(ctx context.Context, arg GetPoetIDGroupParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, getPoetIDGroup, arg.Name, arg.GroupID)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err

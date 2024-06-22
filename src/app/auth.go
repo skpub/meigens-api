@@ -27,7 +27,12 @@ func Signup(c *gin.Context) {
 	ctx := context.Background()
 
 	db_handle := c.MustGet("db").(*sql.DB)
-	queries := db.New(db_handle)
+	tx, err := db_handle.BeginTx(ctx, nil)
+	if err != nil {
+		controller.InternalServerError(c, "DB error")
+		return
+	}
+	queries := db.New(tx)
 
 	// Check if user already exists.
 	if count_users, err := queries.CheckUserExists(ctx, user_id); err != nil {
@@ -54,6 +59,7 @@ func Signup(c *gin.Context) {
 			"message": "failed to create default group.",
 		})
 		c.Abort()
+		tx.Rollback()
 		return
 	}
 
@@ -73,10 +79,12 @@ func Signup(c *gin.Context) {
 			"message": "failed to create user.",
 		})
 		c.Abort()
+		tx.Rollback()
 		return
 	}
 
 	queries.InitDefaultUG(ctx, db.InitDefaultUGParams{UserID: user_id, GroupID: group_id})
+	tx.Commit()
 
 	// Successfully added.
 	c.JSON(200, gin.H{

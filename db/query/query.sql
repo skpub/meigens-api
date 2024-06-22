@@ -5,7 +5,7 @@ INSERT INTO users (id, name, email, password, default_group_id) VALUES ($1, $2, 
 INSERT INTO follow_rels (follower_id, followee_id) VALUES ($1, $2);
 
 -- name: CreateMeigen :one
-INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4) RETURNING id;
+INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING meigens.id;
 
 -- name: CreateGroup :one
 INSERT INTO groups (name) VALUES ($1) RETURNING id;
@@ -55,10 +55,13 @@ SELECT users.id, users.name, groups.img FROM users JOIN groups ON users.default_
 SELECT default_group_id FROM users WHERE id = $1;
 
 -- name: GetPoetID :one
+INSERT INTO poets (name, group_id) VALUES ($1, $2) RETURNING id;
+
+-- name: GetPoetIDGroup :one
 SELECT id FROM poets WHERE name = $1 AND group_id = $2;
 
 -- name: CheckPoetExists :one
-SELECT count(*) FROM poets WHERE name = $1 AND group_id = $2;
+SELECT id FROM poets WHERE name = $1 AND group_id = $2;
 
 -- name: GetGroupsParticipated :many
 SELECT group_id from user_group_rels WHERE user_id = $1;

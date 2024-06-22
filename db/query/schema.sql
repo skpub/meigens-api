@@ -36,7 +36,8 @@ CREATE INDEX ON follow_rels(follower_id COLLATE "unicode");
 CREATE TABLE poets (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name        varchar(127) NOT NULL,
-    group_id    UUID REFERENCES groups(id) NOT NULL
+    group_id    UUID REFERENCES groups(id) NOT NULL,
+    UNIQUE(name, group_id)
 );
 
 CREATE TABLE meigens (
@@ -45,7 +46,8 @@ CREATE TABLE meigens (
     created_at  TIMESTAMPTZ DEFAULT NOW(),
     whom_id     varchar(127) REFERENCES users(id) NOT NULL,
     group_id    UUID REFERENCES groups(id) NOT NULL,
-    poet_id     UUID REFERENCES poets(id) NOT NULL
+    poet_id     UUID REFERENCES poets(id) NOT NULL,
+    UNIQUE(meigen, whom_id, group_id, poet_id)
 );
 
 CREATE TABLE reactions (
