@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"meigens-api/src/controller"
 	"meigens-api/src/controller/socket"
+	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,6 +18,12 @@ func SetRouter(db *sql.DB) *gin.Engine {
 		c.Next()
 	})
 
+	front := os.Getenv("FRONT_ORIGIN")
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins: []string{front},
+		AllowHeaders: []string{"Authorization"},
+	}))
 	r.POST("/signup", Signup)
 	r.POST("/login", Login)
 
@@ -27,7 +35,7 @@ func SetRouter(db *sql.DB) *gin.Engine {
 		})
 	})
 
-	authGroup.GET("/socket", socket.TLSocket)
+	r.GET("/socket", socket.TLSocket)
 	authGroup.GET("/fetch_group_ids", controller.FetchGroups)
 	authGroup.GET("/fetch_tl", controller.FetchTL)
 	authGroup.GET("/fetch_user_imgs", controller.FetchUserImgs)

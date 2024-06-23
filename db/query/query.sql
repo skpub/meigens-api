@@ -36,12 +36,12 @@ DELETE FROM groups WHERE id = $1;
 
 
 -- name: FetchTL :many
-SELECT meigens.meigen, meigens.whom_id, poets.name FROM meigens
-    JOIN follow_rels ON meigens.whom_id = follow_rels.followee_id
+SELECT meigens.meigen, meigens.whom_id, poets.name, meigens.created_at FROM meigens
+    JOIN follow_rels ON meigens.whom_id = follow_rels.followee_id OR meigens.whom_id = follow_rels.follower_id
     JOIN groups ON meigens.group_id = groups.id
     JOIN users ON meigens.whom_id = users.id
     JOIN poets ON meigens.poet_id = poets.id
-    WHERE follow_rels.follower_id = $1
+    WHERE (follow_rels.follower_id = $1 OR meigens.whom_id = $1)
         AND users.default_group_id = groups.id
         AND meigens.created_at < $3 ORDER BY meigens.created_at DESC LIMIT $2;
 

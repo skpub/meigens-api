@@ -5,13 +5,13 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"time"
 
 	"meigens-api/db"
+	"meigens-api/src/auth"
 	"meigens-api/src/controller"
 
 	"github.com/gin-gonic/gin"
@@ -48,12 +48,12 @@ func Signup(c *gin.Context) {
 	// Create Default group for the user.
 	if _, err := queries.CheckGroupExists(ctx, db.CheckGroupExistsParams{
 		UserID: user_id,
-		Name: user_id + "_DEFAULT",
+		Name:   user_id + "_DEFAULT",
 	}); err != nil {
 		controller.InternalServerError(c, "DB error")
 	}
 
-	group_id, err := queries.CreateGroup(ctx, user_id + "_DEFAULT")
+	group_id, err := queries.CreateGroup(ctx, user_id+"_DEFAULT")
 	if err != nil {
 		c.JSON(500, gin.H{
 			"message": "failed to create default group.",
@@ -65,11 +65,11 @@ func Signup(c *gin.Context) {
 
 	// Create new user.
 	password_hash := sha256.Sum256([]byte(password))
-	new_user_params := db.CreateUserParams {
-		ID: user_id,
-		Name: username,
-		Email: email,
-		Password: hex.EncodeToString(password_hash[:]),
+	new_user_params := db.CreateUserParams{
+		ID:             user_id,
+		Name:           username,
+		Email:          email,
+		Password:       hex.EncodeToString(password_hash[:]),
 		DefaultGroupID: group_id,
 	}
 
@@ -103,14 +103,13 @@ func Login(c *gin.Context) {
 	queries := db.New(db_handle)
 
 	password_hash := sha256.Sum256([]byte(password))
-	user_params := db.LoginParams {
-		ID: user_id,
+	user_params := db.LoginParams{
+		ID:       user_id,
 		Password: hex.EncodeToString(password_hash[:]),
 	}
 
 	if _, err := queries.Login(
-		context.Background(), user_params);
-		err != nil {
+		context.Background(), user_params); err != nil {
 		// invalid username or password
 		c.JSON(400, gin.H{
 			"message": "invalid username or password.",
@@ -118,13 +117,13 @@ func Login(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user_id,
-		"exp": time.Now().Add(time.Hour * 24 * 3).Unix(),
+		"exp":     time.Now().Add(time.Hour * 24 * 3).Unix(),
 	})
 	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H {
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to generate token.",
 		})
 		c.Abort()
@@ -132,40 +131,20 @@ func Login(c *gin.Context) {
 	} else {
 		c.JSON(200, gin.H{
 			"message": "You got an access token.",
-			"token": tokenString,
+			"token":   tokenString,
 		})
 	}
 }
 
-func AuthMiddleware (c *gin.Context) {
-	secret := os.Getenv("SECRET")
+func AuthMiddleware(c *gin.Context) {
 	tokenString := c.GetHeader("Authorization")
-
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(secret), nil
-	}, jwt.WithJSONNumber())
+	user_id, err := auth.Auth(tokenString)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H {
-			"error": "Unauthorized. (invalid token)",
+		c.JSON(401, gin.H{
+			"message": err.Error(),
 		})
 		c.Abort()
 		return
 	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		exp, _ := claims["exp"].(json.Number).Int64()
-		if exp < time.Now().Unix() {
-			c.JSON(http.StatusUnauthorized, gin.H {
-				"error": "Unauthorized. (your token is expired)",
-			})
-			c.Abort()
-			return
-		} else {
-			// if claims["exp"] > time.Now().Add(time.Hour * 24 * 3).Unix() {
-			// }
-				// Authorized
-			c.Set("user_id", claims["user_id"].(string))
-			c.Next()
-		}
-	}
+	c.Set("user_id", user_id)
 }

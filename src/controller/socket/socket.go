@@ -4,10 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"meigens-api/db"
+	"net/http"
+	"os"
 	"strings"
 	"sync"
+
+	"meigens-api/src/auth"
 
 	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/emirpasic/gods/sets/hashset"
@@ -24,6 +29,11 @@ var clients = treemap.NewWithStringComparator()
 var socketUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		front_origin := os.Getenv("FRONT_ORIGIN")
+		origin := r.Header.Get("Origin")
+		return origin == front_origin
+	},
 }
 
 func removeClientFromClients(user_id string, conn *websocket.Conn) {
@@ -39,13 +49,13 @@ func removeClientFromClients(user_id string, conn *websocket.Conn) {
 }
 
 func TLSocket(c *gin.Context) {
-	user_id := c.MustGet("user_id").(string)
 	conn, err := socketUpgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Printf("Failed to set websocket upgrade: %+v", err)
 		return
 	}
 	mtx.Lock()
+	user_id := c.Query("user_id")
 	connections, not_first := clients.Get(user_id)
 	// connections: nil or hashset of conn
 	if !not_first {
@@ -63,23 +73,40 @@ func TLSocket(c *gin.Context) {
 	for {
 		t, msg, err := conn.ReadMessage()
 		if err != nil {
-			log.Printf("Failed to read message: %+v", err)
 			removeClientFromClients(user_id, conn)
 			break
 		}
+		fmt.Println(string(msg))
 
 		// parse
-		inst_json := strings.SplitN(string(msg), ",", 2)
-		if len(inst_json) != 2 {
+		inst_json := strings.SplitN(string(msg), ",", 3)
+		if len(inst_json) != 3 {
 			conn.WriteMessage(t, []byte("Invalid instruction format."))
 			continue
 		}
-		json_str := inst_json[1]
+		tokenString := inst_json[1]
+		json_str := inst_json[2]
+
+		// Token validation
+		var jsonData MsgToken
+		err = json.Unmarshal([]byte(json_str), &jsonData)
+		if err != nil {
+			conn.WriteMessage(t, []byte("Invalid JSON format. (Unauthorized)"))
+			continue
+		}
+		_, err = auth.Auth(tokenString)
+		if err != nil {
+			conn.WriteMessage(t, []byte(err.Error()))
+			// Unauthorized
+			continue
+		}
+
 		switch instruction := inst_json[0]; instruction {
+
 		case "0":
 			// receive client TL state.
 			var jsonData MsgTLState
-			err := json.Unmarshal([]byte(inst_json[1]), &jsonData)
+			err := json.Unmarshal([]byte(json_str), &jsonData)
 			if err != nil {
 				conn.WriteMessage(t, []byte("Invalid JSON format."))
 				continue
@@ -90,7 +117,7 @@ func TLSocket(c *gin.Context) {
 		case "1":
 			// create meigen.
 			var jsonData MsgMeigen
-			err := json.Unmarshal([]byte(inst_json[1]), &jsonData)
+			err := json.Unmarshal([]byte(json_str), &jsonData)
 			if err != nil {
 				conn.WriteMessage(t, []byte("Invalid JSON format."))
 				continue
@@ -115,12 +142,12 @@ func TLSocket(c *gin.Context) {
 			}
 			// 2. Create Poet if not exists.
 			poet_id, err := queries.CheckPoetExists(ctx, db.CheckPoetExistsParams{
-				Name: jsonData.Poet,
+				Name:    jsonData.Poet,
 				GroupID: def_grp_id,
 			})
 			if err != nil {
 				poet_id, err = queries.CreatePoet(ctx, db.CreatePoetParams{
-					Name: jsonData.Poet,
+					Name:    jsonData.Poet,
 					GroupID: def_grp_id,
 				})
 				if err != nil {
@@ -134,17 +161,12 @@ func TLSocket(c *gin.Context) {
 				continue
 			}
 			// 4. Create Meigee.
-			_, err = queries.CreateMeigen(ctx, db.CreateMeigenParams{
+			queries.CreateMeigen(ctx, db.CreateMeigenParams{
 				Meigen:  jsonData.Meigen,
 				WhomID:  user_id,
 				GroupID: def_grp_id,
 				PoetID:  poet_id,
 			})
-			if err != nil {
-				log.Printf("Failed to create meigen: %+v", err)
-				tx.Rollback()
-				continue
-			}
 			tx.Commit()
 			//
 			SendMessage(followers, []byte(json_str))
@@ -152,7 +174,7 @@ func TLSocket(c *gin.Context) {
 		case "2":
 			// create meigen to group.
 			var jsonData MsgMeigenGroup
-			err := json.Unmarshal([]byte(inst_json[1]), &jsonData)
+			err := json.Unmarshal([]byte(json_str), &jsonData)
 			if err != nil {
 				conn.WriteMessage(t, []byte("Invalid JSON format."))
 				continue

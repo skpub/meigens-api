@@ -241,12 +241,12 @@ func (q *Queries) DeleteGroup(ctx context.Context, id uuid.UUID) error {
 }
 
 const fetchTL = `-- name: FetchTL :many
-SELECT meigens.meigen, meigens.whom_id, poets.name FROM meigens
-    JOIN follow_rels ON meigens.whom_id = follow_rels.followee_id
+SELECT meigens.meigen, meigens.whom_id, poets.name, meigens.created_at FROM meigens
+    JOIN follow_rels ON meigens.whom_id = follow_rels.followee_id OR meigens.whom_id = follow_rels.follower_id
     JOIN groups ON meigens.group_id = groups.id
     JOIN users ON meigens.whom_id = users.id
     JOIN poets ON meigens.poet_id = poets.id
-    WHERE follow_rels.follower_id = $1
+    WHERE (follow_rels.follower_id = $1 OR meigens.whom_id = $1)
         AND users.default_group_id = groups.id
         AND meigens.created_at < $3 ORDER BY meigens.created_at DESC LIMIT $2
 `
@@ -258,9 +258,10 @@ type FetchTLParams struct {
 }
 
 type FetchTLRow struct {
-	Meigen string
-	WhomID string
-	Name   string
+	Meigen    string
+	WhomID    string
+	Name      string
+	CreatedAt sql.NullTime
 }
 
 func (q *Queries) FetchTL(ctx context.Context, arg FetchTLParams) ([]FetchTLRow, error) {
@@ -272,7 +273,12 @@ func (q *Queries) FetchTL(ctx context.Context, arg FetchTLParams) ([]FetchTLRow,
 	var items []FetchTLRow
 	for rows.Next() {
 		var i FetchTLRow
-		if err := rows.Scan(&i.Meigen, &i.WhomID, &i.Name); err != nil {
+		if err := rows.Scan(
+			&i.Meigen,
+			&i.WhomID,
+			&i.Name,
+			&i.CreatedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

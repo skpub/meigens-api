@@ -14,3 +14,7 @@ type MsgMeigenGroup struct {
 	Poet    string `json:"poet"`
 	GroupID string `json:"group_id"`
 }
+
+type MsgToken struct {
+	Token string `json:"token"`
+}

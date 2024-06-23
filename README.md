@@ -195,7 +195,7 @@ Response &rArr;
 ```json
 {
 	"contents": [
-		{"MEIGEN": MEIGEN, "WhomID" USER_ID: , "Name": POET_NAME}
+		{"MEIGEN": MEIGEN, "WhomID" USER_ID: , "Name": POET_NAME, "CreatedAt": UNIX_TIME}
 	]
 }
 ```
@@ -215,7 +215,7 @@ Response &rArr;
 }
 ```
 
-### `GET` /auth/socket => Upgrade to WebSocket
+### `GET` /socket => Upgrade to WebSocket
 名言をポストした際、ログイン中のフォロワーに名言が送られます。
 こんな感じでサーバがクライアントに何かを送信する系の操作を実現するためには双方向通信が必要であり、
 名言をポストしたりフェッチしたりする際にはこのソケット(WebSocket)が使われることになります。
@@ -226,14 +226,28 @@ To perform this operation, bidirectional communication is required.
 Therefore, this endpoint has been upgraded to WebSocket,
 and you need to use this socket to communicate with the meigens-api when posting or fetching a meigen.
 
+Query Parameters
 
-#### client to server data format:
+* user_id
 
+#### data format:
 ```csv
-[0-2], JSON DATA
+[0-2],JWT,JSON DATA
 ```
 
-instructions:
+* 1st column: instruction
+
+* 2nd column: JWT
+
+* 3rd column: payload (JSON)
+
+
+
+#### client to server:
+
+```csv
+[0-2],JWT,JSON DATA
+```
 
 - 0 => Send TL state.
 
@@ -247,7 +261,7 @@ payload will be
 }
 ```
 
-#### client to server (or server to client) data format:
+#### client to server (or server to client):
 
 - 1 => Post the meigen as your posts.
 
