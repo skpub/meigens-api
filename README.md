@@ -101,6 +101,7 @@ Response &rArr;
 Post Parameters
 
 * `group_name`
+* `group_id` (string)
 
 Response &rArr;
 ```json

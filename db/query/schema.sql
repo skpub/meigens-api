@@ -1,5 +1,5 @@
 CREATE TABLE groups (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id          varchar(127) PRIMARY KEY DEFAULT gen_random_uuid(),
     name        varchar(127) NOT NULL,
     created_at  TIMESTAMPTZ DEFAULT NOW(),
     img         bytea
@@ -12,13 +12,13 @@ CREATE TABLE users (
     since               TIMESTAMPTZ DEFAULT NOW(),
     email               varchar(127) NOT NULL UNIQUE,
     password            TEXT NOT NULL,
-    default_group_id    UUID REFERENCES groups(id) NOT NULL,
+    default_group_id    varchar(127) REFERENCES groups(id) NOT NULL,
     private             BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE user_group_rels (
     user_id     varchar(127) REFERENCES users(id) NOT NULL,
-    group_id    UUID REFERENCES groups(id) NOT NULL,
+    group_id    varchar(127) REFERENCES groups(id) NOT NULL,
     permission  SMALLINT NOT NULL DEFAULT 0,
     PRIMARY KEY (user_id, group_id)
 );
@@ -36,7 +36,7 @@ CREATE INDEX ON follow_rels(follower_id COLLATE "unicode");
 CREATE TABLE poets (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name        varchar(127) NOT NULL,
-    group_id    UUID REFERENCES groups(id) NOT NULL,
+    group_id    varchar(127) REFERENCES groups(id) NOT NULL,
     UNIQUE(name, group_id)
 );
 
@@ -45,7 +45,7 @@ CREATE TABLE meigens (
     meigen      TEXT NOT NULL,
     created_at  TIMESTAMPTZ DEFAULT NOW(),
     whom_id     varchar(127) REFERENCES users(id) NOT NULL,
-    group_id    UUID REFERENCES groups(id) NOT NULL,
+    group_id    varchar(127) REFERENCES groups(id) NOT NULL,
     poet_id     UUID REFERENCES poets(id) NOT NULL,
     UNIQUE(meigen, whom_id, group_id, poet_id)
 );

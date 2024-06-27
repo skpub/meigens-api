@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"database/sql"
 	"context"
+	"database/sql"
 	"meigens-api/db"
 
 	"github.com/gin-gonic/gin"
@@ -31,6 +31,7 @@ func AddGroup(c *gin.Context) {
 
 	user_id, _ := c.Get("user_id")
 	group_name := c.PostForm("group_name")
+	group_id := c.PostForm("group_id")
 
 	queries := db.New(db_handle)
 
@@ -46,7 +47,10 @@ func AddGroup(c *gin.Context) {
 		return
 	}
 
-	new_group_id, err := queries.CreateGroup(ctx, group_name)
+	new_group_id, err := queries.CreateGroup(ctx, db.CreateGroupParams{
+		ID: group_id,
+		Name: group_name,
+	})
 	if err != nil {
 		InternalServerError(c, "failed to add the group.")
 		return

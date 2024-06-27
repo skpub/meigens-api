@@ -8,19 +8,20 @@ INSERT INTO follow_rels (follower_id, followee_id) VALUES ($1, $2);
 INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id;
 
 -- name: GetMeigenContent :one
-SELECT meigens.meigen, meigens.whom_id, meigens.group_id, groups.name, poets.name FROM meigens
+SELECT meigens.meigen, meigens.whom_id, users.name, meigens.group_id, groups.name, poets.name FROM meigens
     JOIN poets ON meigens.poet_id = poets.id
     JOIN groups ON meigens.group_id = groups.id
+    JOIN users ON meigens.whom_id = users.id
     WHERE meigens.id = $1;
 
 -- name: CreateGroup :one
-INSERT INTO groups (name) VALUES ($1) RETURNING id;
+INSERT INTO groups (id, name) VALUES ($1, $2) RETURNING id;
 
 -- name: AddUserToGroup :exec
 INSERT INTO user_group_rels (user_id, group_id, permission) VALUES ($1, $2, $3);
 
 -- name: InitDefaultUG :exec
-INSERT INTO user_group_rels (user_id, group_id, permission) VALUES ($1, $2, 0xffff);
+INSERT INTO user_group_rels (user_id, group_id, permission) VALUES ($1, concat($1::VARCHAR(127), '_DEFAULT'), 0xff);
 
 -- name: CreatePoet :one
 INSERT INTO poets (name, group_id) VALUES ($1, $2) RETURNING id;
