@@ -16,7 +16,7 @@ type FollowRel struct {
 }
 
 type Group struct {
-	ID        uuid.UUID    `json:"id"`
+	ID        string       `json:"id"`
 	Name      string       `json:"name"`
 	CreatedAt sql.NullTime `json:"created_at"`
 	Img       []byte       `json:"img"`
@@ -27,14 +27,14 @@ type Meigen struct {
 	Meigen    string       `json:"meigen"`
 	CreatedAt sql.NullTime `json:"created_at"`
 	WhomID    string       `json:"whom_id"`
-	GroupID   uuid.UUID    `json:"group_id"`
+	GroupID   string       `json:"group_id"`
 	PoetID    uuid.UUID    `json:"poet_id"`
 }
 
 type Poet struct {
 	ID      uuid.UUID `json:"id"`
 	Name    string    `json:"name"`
-	GroupID uuid.UUID `json:"group_id"`
+	GroupID string    `json:"group_id"`
 }
 
 type Reaction struct {
@@ -52,12 +52,12 @@ type User struct {
 	Since          sql.NullTime   `json:"since"`
 	Email          string         `json:"email"`
 	Password       string         `json:"password"`
-	DefaultGroupID uuid.UUID      `json:"default_group_id"`
+	DefaultGroupID string         `json:"default_group_id"`
 	Private        bool           `json:"private"`
 }
 
 type UserGroupRel struct {
-	UserID     string    `json:"user_id"`
-	GroupID    uuid.UUID `json:"group_id"`
-	Permission int16     `json:"permission"`
+	UserID     string `json:"user_id"`
+	GroupID    string `json:"group_id"`
+	Permission int16  `json:"permission"`
 }

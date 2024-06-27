@@ -30,7 +30,7 @@ echo "user_imgs: ${user_imgs}"
 
 # Add Group
 echo -e "\n# Add Group"
-group_id=$(curl -s -X POST -H "Authorization: ${token}" -F "group_name=new_group" http://localhost:8080/auth/add_group | jq -r '.group_id')
+group_id=$(curl -s -X POST -H "Authorization: ${token}" -F "group_id=sato_kosen" -F "group_name=佐藤高専" http://localhost:8080/auth/add_group | jq -r '.group_id')
 echo "group_id: ${group_id}"
 
 # Obtain Group ID

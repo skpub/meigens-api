@@ -32,34 +32,36 @@ func Signup(c *gin.Context) {
 		controller.InternalServerError(c, "DB error")
 		return
 	}
+	defer tx.Rollback()
 	queries := db.New(tx)
 
 	// Check if user already exists.
 	if count_users, err := queries.CheckUserExists(ctx, user_id); err != nil {
 		controller.InternalServerError(c, "DB error")
 	} else if count_users > 0 {
-		c.JSON(400, gin.H{
-			"message": "User already exists.",
-		})
+		controller.BadRequest(c, "user already exists.")
 		c.Abort()
 		return
 	}
 
 	// Create Default group for the user.
 	if _, err := queries.CheckGroupExists(ctx, db.CheckGroupExistsParams{
-		UserID: user_id,
+		UserID: user_id + "_DEFAULT",
 		Name:   user_id + "_DEFAULT",
 	}); err != nil {
 		controller.InternalServerError(c, "DB error")
+		c.Abort()
+		return
 	}
 
-	group_id, err := queries.CreateGroup(ctx, user_id+"_DEFAULT")
+	_, err = queries.CreateGroup(ctx, db.CreateGroupParams{
+		ID:   user_id + "_DEFAULT",
+		Name: user_id + "_DEFAULT",
+	})
 	if err != nil {
-		c.JSON(500, gin.H{
-			"message": "failed to create default group.",
-		})
+		fmt.Println(err)
+		controller.InternalServerError(c, "failed to create default group.")
 		c.Abort()
-		tx.Rollback()
 		return
 	}
 
@@ -70,21 +72,29 @@ func Signup(c *gin.Context) {
 		Name:           username,
 		Email:          email,
 		Password:       hex.EncodeToString(password_hash[:]),
-		DefaultGroupID: group_id,
+		DefaultGroupID: user_id + "_DEFAULT",
 	}
 
-	_, err2 := queries.CreateUser(context.Background(), new_user_params)
-	if err2 != nil {
-		c.JSON(500, gin.H{
-			"message": "failed to create user.",
-		})
+	_, err = queries.CreateUser(ctx, new_user_params)
+	if err != nil {
+		controller.InternalServerError(c, "failed to create user.")
 		c.Abort()
-		tx.Rollback()
 		return
 	}
 
-	queries.InitDefaultUG(ctx, db.InitDefaultUGParams{UserID: user_id, GroupID: group_id})
-	tx.Commit()
+	err = queries.InitDefaultUG(ctx, user_id)
+	if err != nil {
+		fmt.Println(err)
+		controller.InternalServerError(c, "DB error")
+		c.Abort()
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		controller.InternalServerError(c, "can't commit transaction.")
+		c.Abort()
+		return
+	}
 
 	// Successfully added.
 	c.JSON(200, gin.H{

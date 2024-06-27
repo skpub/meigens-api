@@ -7,7 +7,6 @@ import (
 	"meigens-api/db"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func AddMeigen(c *gin.Context) {
@@ -89,7 +88,7 @@ func AddMeigenToGroup(c *gin.Context) {
 	}
 
 	user_id, _ := c.Get("user_id")
-	group_id, _ := uuid.Parse(c.PostForm("group_id"))
+	group_id := c.PostForm("group_id")
 	poet := c.PostForm("poet")
 	meigen := c.PostForm("meigen")
 

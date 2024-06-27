@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 
 	"meigens-api/db"
 )
@@ -53,20 +52,14 @@ func PatchGroupImage(c *gin.Context) {
 	user_id := c.MustGet("user_id").(string)
 	group_id := c.PostForm("group_id")
 
-	group_id_uuid, err := uuid.Parse(group_id)
-	if err != nil {
-		BadRequest(c, "Invalid group_id.")
-		return
-	}
-
 	queries := db.New(db_handle)
 	if permission, err := queries.CheckUserExistsGroup(ctx, db.CheckUserExistsGroupParams{
-		UserID: user_id,
-		GroupID: group_id_uuid,
+		UserID:  user_id,
+		GroupID: group_id,
 	}); err != nil {
 		InternalServerError(c, "DB error. Can't check if the user is in the group.")
 		return
-	} else if permission & 1 == 0 { // check if the user has permission to patch the group image(WRITE).
+	} else if permission&1 == 0 { // check if the user has permission to patch the group image(WRITE).
 		BadRequest(c, "You don't have the permission to patch the group image.")
 		return
 	}
@@ -76,10 +69,10 @@ func PatchGroupImage(c *gin.Context) {
 	}
 	// Finaly, we got the image binary 'img_png' to be stored in the database.
 	if err3 := queries.PatchGroupImage(ctx, db.PatchGroupImageParams{
-		ID: group_id_uuid,
+		ID:  group_id,
 		Img: img_png.Bytes(),
 	}); err3 != nil {
-		InternalServerError(c, "Failed to store image. :" + err3.Error())
+		InternalServerError(c, "Failed to store image. :"+err3.Error())
 	}
 
 	c.JSON(200, gin.H{
@@ -104,7 +97,7 @@ func PatchUserImage(c *gin.Context) {
 		Img: img_png.Bytes(),
 	})
 	if err5 != nil {
-		InternalServerError(c, "Failed to store image. :" + err5.Error())
+		InternalServerError(c, "Failed to store image. :"+err5.Error())
 		return
 	}
 	c.JSON(200, gin.H{
