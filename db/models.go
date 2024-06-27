@@ -11,53 +11,53 @@ import (
 )
 
 type FollowRel struct {
-	FollowerID string
-	FolloweeID string
+	FollowerID string `json:"follower_id"`
+	FolloweeID string `json:"followee_id"`
 }
 
 type Group struct {
-	ID        uuid.UUID
-	Name      string
-	CreatedAt sql.NullTime
-	Img       []byte
+	ID        uuid.UUID    `json:"id"`
+	Name      string       `json:"name"`
+	CreatedAt sql.NullTime `json:"created_at"`
+	Img       []byte       `json:"img"`
 }
 
 type Meigen struct {
-	ID        uuid.UUID
-	Meigen    string
-	CreatedAt sql.NullTime
-	WhomID    string
-	GroupID   uuid.UUID
-	PoetID    uuid.UUID
+	ID        uuid.UUID    `json:"id"`
+	Meigen    string       `json:"meigen"`
+	CreatedAt sql.NullTime `json:"created_at"`
+	WhomID    string       `json:"whom_id"`
+	GroupID   uuid.UUID    `json:"group_id"`
+	PoetID    uuid.UUID    `json:"poet_id"`
 }
 
 type Poet struct {
-	ID      uuid.UUID
-	Name    string
-	GroupID uuid.UUID
+	ID      uuid.UUID `json:"id"`
+	Name    string    `json:"name"`
+	GroupID uuid.UUID `json:"group_id"`
 }
 
 type Reaction struct {
-	ID        uuid.UUID
-	MeigenID  uuid.UUID
-	UserID    string
-	Reaction  int32
-	CreatedAt sql.NullTime
+	ID        uuid.UUID    `json:"id"`
+	MeigenID  uuid.UUID    `json:"meigen_id"`
+	UserID    string       `json:"user_id"`
+	Reaction  int32        `json:"reaction"`
+	CreatedAt sql.NullTime `json:"created_at"`
 }
 
 type User struct {
-	ID             string
-	Name           string
-	Bio            sql.NullString
-	Since          sql.NullTime
-	Email          string
-	Password       string
-	DefaultGroupID uuid.UUID
-	Private        bool
+	ID             string         `json:"id"`
+	Name           string         `json:"name"`
+	Bio            sql.NullString `json:"bio"`
+	Since          sql.NullTime   `json:"since"`
+	Email          string         `json:"email"`
+	Password       string         `json:"password"`
+	DefaultGroupID uuid.UUID      `json:"default_group_id"`
+	Private        bool           `json:"private"`
 }
 
 type UserGroupRel struct {
-	UserID     string
-	GroupID    uuid.UUID
-	Permission int16
+	UserID     string    `json:"user_id"`
+	GroupID    uuid.UUID `json:"group_id"`
+	Permission int16     `json:"permission"`
 }

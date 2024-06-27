@@ -5,7 +5,13 @@ INSERT INTO users (id, name, email, password, default_group_id) VALUES ($1, $2, 
 INSERT INTO follow_rels (follower_id, followee_id) VALUES ($1, $2);
 
 -- name: CreateMeigen :one
-INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING meigens.id;
+INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id;
+
+-- name: GetMeigenContent :one
+SELECT meigens.meigen, meigens.whom_id, meigens.group_id, groups.name, poets.name FROM meigens
+    JOIN poets ON meigens.poet_id = poets.id
+    JOIN groups ON meigens.group_id = groups.id
+    WHERE meigens.id = $1;
 
 -- name: CreateGroup :one
 INSERT INTO groups (name) VALUES ($1) RETURNING id;

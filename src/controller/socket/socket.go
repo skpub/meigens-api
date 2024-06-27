@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"meigens-api/db"
 	"net/http"
@@ -76,7 +75,6 @@ func TLSocket(c *gin.Context) {
 			removeClientFromClients(user_id, conn)
 			break
 		}
-		fmt.Println(string(msg))
 
 		// parse
 		inst_json := strings.SplitN(string(msg), ",", 3)
@@ -161,15 +159,22 @@ func TLSocket(c *gin.Context) {
 				continue
 			}
 			// 4. Create Meigee.
-			queries.CreateMeigen(ctx, db.CreateMeigenParams{
+			meigen_id, err := queries.CreateMeigen(ctx, db.CreateMeigenParams{
 				Meigen:  jsonData.Meigen,
 				WhomID:  user_id,
 				GroupID: def_grp_id,
 				PoetID:  poet_id,
 			})
+			if err != nil {
+				log.Printf("Failed to create meigen: %+v", err)
+				tx.Rollback()
+			}
+
+			record, _ := queries.GetMeigenContent(ctx, meigen_id)
+			meigen, _ := json.Marshal(record)
 			tx.Commit()
 			//
-			SendMessage(followers, []byte(json_str))
+			SendMessage(followers, []byte(instruction + "," + string(meigen)), user_id)
 			//
 		case "2":
 			// create meigen to group.
@@ -189,7 +194,7 @@ func TLSocket(c *gin.Context) {
 	removeClientFromClients(user_id, conn)
 }
 
-func SendMessage(recipients_candidate []string, msg []byte) {
+func SendMessage(recipients_candidate_ []string, msg []byte, user_id string) {
 	// Resipients = INTERSECTION of (recipients_candidate, LOGGED_IN_USER)
 	// Both are sorted.
 	// So this algorithm can be used. O(max(len(A), len(B)))
@@ -203,6 +208,7 @@ func SendMessage(recipients_candidate []string, msg []byte) {
 		====
 		C: result.
 	*/
+	recipients_candidate := append(recipients_candidate_, user_id)
 	resipients := hashset.New()
 	it := clients.Iterator()
 	for it.Next() {

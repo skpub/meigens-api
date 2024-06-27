@@ -1,7 +1,16 @@
-version: 1
+version: "1"
 packages:
   - name: db
     path: ./db
     queries: ./db/query/query.sql
     schema: ./db/query/schema.sql
     engine: postgresql
+    emit_json_tags: true
+
+# version: 1
+# packages:
+#   - name: db
+#     path: ./db
+#     queries: ./db/query/query.sql
+#     schema: ./db/query/schema.sql
+#     engine: postgresql

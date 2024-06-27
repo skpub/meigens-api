@@ -17,9 +17,9 @@ INSERT INTO user_group_rels (user_id, group_id, permission) VALUES ($1, $2, $3)
 `
 
 type AddUserToGroupParams struct {
-	UserID     string
-	GroupID    uuid.UUID
-	Permission int16
+	UserID     string    `json:"user_id"`
+	GroupID    uuid.UUID `json:"group_id"`
+	Permission int16     `json:"permission"`
 }
 
 func (q *Queries) AddUserToGroup(ctx context.Context, arg AddUserToGroupParams) error {
@@ -33,8 +33,8 @@ SELECT count(*) FROM user_group_rels JOIN groups ON user_group_rels.group_id = g
 `
 
 type CheckGroupExistsParams struct {
-	UserID string
-	Name   string
+	UserID string `json:"user_id"`
+	Name   string `json:"name"`
 }
 
 func (q *Queries) CheckGroupExists(ctx context.Context, arg CheckGroupExistsParams) (int64, error) {
@@ -61,10 +61,10 @@ SELECT count(*) FROM meigens JOIN poets ON meigens.poet_id = poets.id
 `
 
 type CheckMeigenExistsByMeigenParams struct {
-	Meigen  string
-	WhomID  string
-	GroupID uuid.UUID
-	Name    string
+	Meigen  string    `json:"meigen"`
+	WhomID  string    `json:"whom_id"`
+	GroupID uuid.UUID `json:"group_id"`
+	Name    string    `json:"name"`
 }
 
 func (q *Queries) CheckMeigenExistsByMeigen(ctx context.Context, arg CheckMeigenExistsByMeigenParams) (int64, error) {
@@ -84,8 +84,8 @@ SELECT id FROM poets WHERE name = $1 AND group_id = $2
 `
 
 type CheckPoetExistsParams struct {
-	Name    string
-	GroupID uuid.UUID
+	Name    string    `json:"name"`
+	GroupID uuid.UUID `json:"group_id"`
 }
 
 func (q *Queries) CheckPoetExists(ctx context.Context, arg CheckPoetExistsParams) (uuid.UUID, error) {
@@ -100,9 +100,9 @@ SELECT reaction FROM reactions WHERE meigen_id = $1 AND user_id = $2 AND reactio
 `
 
 type CheckReactionExistsParams struct {
-	MeigenID uuid.UUID
-	UserID   string
-	Reaction int32
+	MeigenID uuid.UUID `json:"meigen_id"`
+	UserID   string    `json:"user_id"`
+	Reaction int32     `json:"reaction"`
 }
 
 func (q *Queries) CheckReactionExists(ctx context.Context, arg CheckReactionExistsParams) (int32, error) {
@@ -128,8 +128,8 @@ SELECT permission from user_group_rels WHERE user_id = $1 AND group_id = $2
 `
 
 type CheckUserExistsGroupParams struct {
-	UserID  string
-	GroupID uuid.UUID
+	UserID  string    `json:"user_id"`
+	GroupID uuid.UUID `json:"group_id"`
 }
 
 func (q *Queries) CheckUserExistsGroup(ctx context.Context, arg CheckUserExistsGroupParams) (int16, error) {
@@ -151,14 +151,14 @@ func (q *Queries) CreateGroup(ctx context.Context, name string) (uuid.UUID, erro
 }
 
 const createMeigen = `-- name: CreateMeigen :one
-INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING meigens.id
+INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id
 `
 
 type CreateMeigenParams struct {
-	Meigen  string
-	WhomID  string
-	GroupID uuid.UUID
-	PoetID  uuid.UUID
+	Meigen  string    `json:"meigen"`
+	WhomID  string    `json:"whom_id"`
+	GroupID uuid.UUID `json:"group_id"`
+	PoetID  uuid.UUID `json:"poet_id"`
 }
 
 func (q *Queries) CreateMeigen(ctx context.Context, arg CreateMeigenParams) (uuid.UUID, error) {
@@ -178,8 +178,8 @@ INSERT INTO poets (name, group_id) VALUES ($1, $2) RETURNING id
 `
 
 type CreatePoetParams struct {
-	Name    string
-	GroupID uuid.UUID
+	Name    string    `json:"name"`
+	GroupID uuid.UUID `json:"group_id"`
 }
 
 func (q *Queries) CreatePoet(ctx context.Context, arg CreatePoetParams) (uuid.UUID, error) {
@@ -194,9 +194,9 @@ INSERT INTO reactions (meigen_id, user_id, reaction) VALUES ($1, $2, $3) RETURNI
 `
 
 type CreateReactionParams struct {
-	MeigenID uuid.UUID
-	UserID   string
-	Reaction int32
+	MeigenID uuid.UUID `json:"meigen_id"`
+	UserID   string    `json:"user_id"`
+	Reaction int32     `json:"reaction"`
 }
 
 func (q *Queries) CreateReaction(ctx context.Context, arg CreateReactionParams) (uuid.UUID, error) {
@@ -211,11 +211,11 @@ INSERT INTO users (id, name, email, password, default_group_id) VALUES ($1, $2, 
 `
 
 type CreateUserParams struct {
-	ID             string
-	Name           string
-	Email          string
-	Password       string
-	DefaultGroupID uuid.UUID
+	ID             string    `json:"id"`
+	Name           string    `json:"name"`
+	Email          string    `json:"email"`
+	Password       string    `json:"password"`
+	DefaultGroupID uuid.UUID `json:"default_group_id"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (string, error) {
@@ -252,16 +252,16 @@ SELECT meigens.meigen, meigens.whom_id, poets.name, meigens.created_at FROM meig
 `
 
 type FetchTLParams struct {
-	FollowerID string
-	Limit      int32
-	CreatedAt  sql.NullTime
+	FollowerID string       `json:"follower_id"`
+	Limit      int32        `json:"limit"`
+	CreatedAt  sql.NullTime `json:"created_at"`
 }
 
 type FetchTLRow struct {
-	Meigen    string
-	WhomID    string
-	Name      string
-	CreatedAt sql.NullTime
+	Meigen    string       `json:"meigen"`
+	WhomID    string       `json:"whom_id"`
+	Name      string       `json:"name"`
+	CreatedAt sql.NullTime `json:"created_at"`
 }
 
 func (q *Queries) FetchTL(ctx context.Context, arg FetchTLParams) ([]FetchTLRow, error) {
@@ -297,8 +297,8 @@ INSERT INTO follow_rels (follower_id, followee_id) VALUES ($1, $2)
 `
 
 type FollowParams struct {
-	FollowerID string
-	FolloweeID string
+	FollowerID string `json:"follower_id"`
+	FolloweeID string `json:"followee_id"`
 }
 
 func (q *Queries) Follow(ctx context.Context, arg FollowParams) error {
@@ -371,13 +371,41 @@ func (q *Queries) GetGroupsParticipated(ctx context.Context, userID string) ([]u
 	return items, nil
 }
 
+const getMeigenContent = `-- name: GetMeigenContent :one
+SELECT meigens.meigen, meigens.whom_id, meigens.group_id, groups.name, poets.name FROM meigens
+    JOIN poets ON meigens.poet_id = poets.id
+    JOIN groups ON meigens.group_id = groups.id
+    WHERE meigens.id = $1
+`
+
+type GetMeigenContentRow struct {
+	Meigen  string    `json:"meigen"`
+	WhomID  string    `json:"whom_id"`
+	GroupID uuid.UUID `json:"group_id"`
+	Name    string    `json:"name"`
+	Name_2  string    `json:"name_2"`
+}
+
+func (q *Queries) GetMeigenContent(ctx context.Context, id uuid.UUID) (GetMeigenContentRow, error) {
+	row := q.db.QueryRowContext(ctx, getMeigenContent, id)
+	var i GetMeigenContentRow
+	err := row.Scan(
+		&i.Meigen,
+		&i.WhomID,
+		&i.GroupID,
+		&i.Name,
+		&i.Name_2,
+	)
+	return i, err
+}
+
 const getPoetID = `-- name: GetPoetID :one
 INSERT INTO poets (name, group_id) VALUES ($1, $2) RETURNING id
 `
 
 type GetPoetIDParams struct {
-	Name    string
-	GroupID uuid.UUID
+	Name    string    `json:"name"`
+	GroupID uuid.UUID `json:"group_id"`
 }
 
 func (q *Queries) GetPoetID(ctx context.Context, arg GetPoetIDParams) (uuid.UUID, error) {
@@ -392,8 +420,8 @@ SELECT id FROM poets WHERE name = $1 AND group_id = $2
 `
 
 type GetPoetIDGroupParams struct {
-	Name    string
-	GroupID uuid.UUID
+	Name    string    `json:"name"`
+	GroupID uuid.UUID `json:"group_id"`
 }
 
 func (q *Queries) GetPoetIDGroup(ctx context.Context, arg GetPoetIDGroupParams) (uuid.UUID, error) {
@@ -440,8 +468,8 @@ INSERT INTO user_group_rels (user_id, group_id, permission) VALUES ($1, $2, 0xff
 `
 
 type InitDefaultUGParams struct {
-	UserID  string
-	GroupID uuid.UUID
+	UserID  string    `json:"user_id"`
+	GroupID uuid.UUID `json:"group_id"`
 }
 
 func (q *Queries) InitDefaultUG(ctx context.Context, arg InitDefaultUGParams) error {
@@ -454,8 +482,8 @@ SELECT id, name, bio, since, email, password, default_group_id, private FROM use
 `
 
 type LoginParams struct {
-	ID       string
-	Password string
+	ID       string `json:"id"`
+	Password string `json:"password"`
 }
 
 func (q *Queries) Login(ctx context.Context, arg LoginParams) (User, error) {
@@ -479,8 +507,8 @@ UPDATE groups SET img = $2 WHERE id = $1
 `
 
 type PatchGroupImageParams struct {
-	ID  uuid.UUID
-	Img []byte
+	ID  uuid.UUID `json:"id"`
+	Img []byte    `json:"img"`
 }
 
 func (q *Queries) PatchGroupImage(ctx context.Context, arg PatchGroupImageParams) error {
@@ -495,8 +523,8 @@ UPDATE groups SET img = $2 WHERE id = (
 `
 
 type PatchUserImageParams struct {
-	ID  string
-	Img []byte
+	ID  string `json:"id"`
+	Img []byte `json:"img"`
 }
 
 func (q *Queries) PatchUserImage(ctx context.Context, arg PatchUserImageParams) (uuid.UUID, error) {
@@ -511,9 +539,9 @@ SELECT users.id, users.name, groups.img FROM users JOIN groups ON users.default_
 `
 
 type SearchUsersRow struct {
-	ID   string
-	Name string
-	Img  []byte
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Img  []byte `json:"img"`
 }
 
 func (q *Queries) SearchUsers(ctx context.Context, name string) ([]SearchUsersRow, error) {
