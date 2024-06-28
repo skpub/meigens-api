@@ -70,7 +70,7 @@ func TLSocket(c *gin.Context) {
 	db_handle := c.MustGet("db").(*sql.DB)
 	ctx := context.Background()
 	for {
-		t, msg, err := conn.ReadMessage()
+		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			removeClientFromClients(user_id, conn)
 			break
@@ -79,7 +79,7 @@ func TLSocket(c *gin.Context) {
 		// parse
 		inst_json := strings.SplitN(string(msg), ",", 3)
 		if len(inst_json) != 3 {
-			conn.WriteMessage(t, []byte("Invalid instruction format."))
+			SendErrorMessage(conn, "Invalid instruction format.")
 			continue
 		}
 		tokenString := inst_json[1]
@@ -89,12 +89,12 @@ func TLSocket(c *gin.Context) {
 		var jsonData MsgToken
 		err = json.Unmarshal([]byte(json_str), &jsonData)
 		if err != nil {
-			conn.WriteMessage(t, []byte("Invalid JSON format. (Unauthorized)"))
+			SendErrorMessage(conn, "Invalid JSON format. (Unauthorized)")
 			continue
 		}
 		_, err = auth.Auth(tokenString)
 		if err != nil {
-			conn.WriteMessage(t, []byte(err.Error()))
+			SendErrorMessage(conn, "Invalid Token. (Unauthorized)")
 			// Unauthorized
 			continue
 		}
@@ -106,7 +106,7 @@ func TLSocket(c *gin.Context) {
 			var jsonData MsgTLState
 			err := json.Unmarshal([]byte(json_str), &jsonData)
 			if err != nil {
-				conn.WriteMessage(t, []byte("Invalid JSON format."))
+				SendErrorMessage(conn, "Invalid JSON format.")
 				continue
 			}
 			//
@@ -117,7 +117,7 @@ func TLSocket(c *gin.Context) {
 			var jsonData MsgMeigen
 			err := json.Unmarshal([]byte(json_str), &jsonData)
 			if err != nil {
-				conn.WriteMessage(t, []byte("Invalid JSON format."))
+				SendErrorMessage(conn, "Invalid JSON format.")
 				continue
 			}
 			tx, err := db_handle.BeginTx(ctx, nil)
@@ -168,33 +168,37 @@ func TLSocket(c *gin.Context) {
 			if err != nil {
 				log.Printf("Failed to create meigen: %+v", err)
 				tx.Rollback()
+				continue
 			}
 
 			record, _ := queries.GetMeigenContent(ctx, meigen_id)
 			meigen, _ := json.Marshal(record)
 			tx.Commit()
 			//
-			SendMessage(followers, []byte(instruction + "," + string(meigen)), user_id)
+			SendMeigenToFollowers(followers, []byte("1" + "," + string(meigen)), user_id)
 			//
 		case "2":
 			// create meigen to group.
 			var jsonData MsgMeigenGroup
 			err := json.Unmarshal([]byte(json_str), &jsonData)
 			if err != nil {
-				conn.WriteMessage(t, []byte("Invalid JSON format."))
+				SendErrorMessage(conn, "Invalid JSON format.")
 				continue
 			}
 			//
 			// TODO: implement.
 			//
 		}
-		// end parse
 	}
 	// clean
 	removeClientFromClients(user_id, conn)
 }
 
-func SendMessage(recipients_candidate_ []string, msg []byte, user_id string) {
+func SendErrorMessage(conn *websocket.Conn, msg string) {
+	conn.WriteMessage(websocket.TextMessage, []byte("0," + msg))
+}
+
+func SendMeigenToFollowers(recipients_candidate_ []string, msg []byte, user_id string) {
 	// Resipients = INTERSECTION of (recipients_candidate, LOGGED_IN_USER)
 	// Both are sorted.
 	// So this algorithm can be used. O(max(len(A), len(B)))

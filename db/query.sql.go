@@ -246,7 +246,16 @@ func (q *Queries) DeleteGroup(ctx context.Context, id string) error {
 }
 
 const fetchTL = `-- name: FetchTL :many
-SELECT meigens.meigen, meigens.whom_id, poets.name, meigens.created_at FROM meigens
+SELECT
+    meigens.meigen      AS meigen,
+    meigens.whom_id     AS whom_id,
+    users.name          AS whom,
+    meigens.group_id    AS group_id,
+    groups.name         AS group,
+    poets.name          AS poet,
+    poets.id            AS poet_id,
+    meigens.created_at  AS created_at
+    FROM meigens
     JOIN follow_rels ON meigens.whom_id = follow_rels.followee_id OR meigens.whom_id = follow_rels.follower_id
     JOIN groups ON meigens.group_id = groups.id
     JOIN users ON meigens.whom_id = users.id
@@ -265,7 +274,11 @@ type FetchTLParams struct {
 type FetchTLRow struct {
 	Meigen    string       `json:"meigen"`
 	WhomID    string       `json:"whom_id"`
-	Name      string       `json:"name"`
+	Whom      string       `json:"whom"`
+	GroupID   string       `json:"group_id"`
+	Group     string       `json:"group"`
+	Poet      string       `json:"poet"`
+	PoetID    uuid.UUID    `json:"poet_id"`
 	CreatedAt sql.NullTime `json:"created_at"`
 }
 
@@ -281,7 +294,11 @@ func (q *Queries) FetchTL(ctx context.Context, arg FetchTLParams) ([]FetchTLRow,
 		if err := rows.Scan(
 			&i.Meigen,
 			&i.WhomID,
-			&i.Name,
+			&i.Whom,
+			&i.GroupID,
+			&i.Group,
+			&i.Poet,
+			&i.PoetID,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -377,7 +394,16 @@ func (q *Queries) GetGroupsParticipated(ctx context.Context, userID string) ([]s
 }
 
 const getMeigenContent = `-- name: GetMeigenContent :one
-SELECT meigens.meigen, meigens.whom_id, users.name, meigens.group_id, groups.name, poets.name FROM meigens
+SELECT
+    meigens.meigen      AS meigen,
+    meigens.whom_id     AS whom_id,
+    users.name          AS whom,
+    meigens.group_id    AS group_id,
+    groups.name         AS group,
+    poets.name          AS poet,
+    poets.id            AS poet_id,
+    meigens.created_at  AS created_at
+    FROM meigens
     JOIN poets ON meigens.poet_id = poets.id
     JOIN groups ON meigens.group_id = groups.id
     JOIN users ON meigens.whom_id = users.id
@@ -385,12 +411,14 @@ SELECT meigens.meigen, meigens.whom_id, users.name, meigens.group_id, groups.nam
 `
 
 type GetMeigenContentRow struct {
-	Meigen  string `json:"meigen"`
-	WhomID  string `json:"whom_id"`
-	Name    string `json:"name"`
-	GroupID string `json:"group_id"`
-	Name_2  string `json:"name_2"`
-	Name_3  string `json:"name_3"`
+	Meigen    string       `json:"meigen"`
+	WhomID    string       `json:"whom_id"`
+	Whom      string       `json:"whom"`
+	GroupID   string       `json:"group_id"`
+	Group     string       `json:"group"`
+	Poet      string       `json:"poet"`
+	PoetID    uuid.UUID    `json:"poet_id"`
+	CreatedAt sql.NullTime `json:"created_at"`
 }
 
 func (q *Queries) GetMeigenContent(ctx context.Context, id uuid.UUID) (GetMeigenContentRow, error) {
@@ -399,10 +427,12 @@ func (q *Queries) GetMeigenContent(ctx context.Context, id uuid.UUID) (GetMeigen
 	err := row.Scan(
 		&i.Meigen,
 		&i.WhomID,
-		&i.Name,
+		&i.Whom,
 		&i.GroupID,
-		&i.Name_2,
-		&i.Name_3,
+		&i.Group,
+		&i.Poet,
+		&i.PoetID,
+		&i.CreatedAt,
 	)
 	return i, err
 }

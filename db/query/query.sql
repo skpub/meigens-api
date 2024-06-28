@@ -8,7 +8,16 @@ INSERT INTO follow_rels (follower_id, followee_id) VALUES ($1, $2);
 INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id;
 
 -- name: GetMeigenContent :one
-SELECT meigens.meigen, meigens.whom_id, users.name, meigens.group_id, groups.name, poets.name FROM meigens
+SELECT
+    meigens.meigen      AS meigen,
+    meigens.whom_id     AS whom_id,
+    users.name          AS whom,
+    meigens.group_id    AS group_id,
+    groups.name         AS group,
+    poets.name          AS poet,
+    poets.id            AS poet_id,
+    meigens.created_at  AS created_at
+    FROM meigens
     JOIN poets ON meigens.poet_id = poets.id
     JOIN groups ON meigens.group_id = groups.id
     JOIN users ON meigens.whom_id = users.id
@@ -43,7 +52,16 @@ DELETE FROM groups WHERE id = $1;
 
 
 -- name: FetchTL :many
-SELECT meigens.meigen, meigens.whom_id, poets.name, meigens.created_at FROM meigens
+SELECT
+    meigens.meigen      AS meigen,
+    meigens.whom_id     AS whom_id,
+    users.name          AS whom,
+    meigens.group_id    AS group_id,
+    groups.name         AS group,
+    poets.name          AS poet,
+    poets.id            AS poet_id,
+    meigens.created_at  AS created_at
+    FROM meigens
     JOIN follow_rels ON meigens.whom_id = follow_rels.followee_id OR meigens.whom_id = follow_rels.follower_id
     JOIN groups ON meigens.group_id = groups.id
     JOIN users ON meigens.whom_id = users.id
