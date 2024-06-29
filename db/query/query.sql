@@ -70,6 +70,12 @@ SELECT
         AND users.default_group_id = groups.id
         AND meigens.created_at < $3 ORDER BY meigens.created_at DESC LIMIT $2;
 
+-- name: GetUserProfile :one
+SELECT users.name, users.bio FROM users WHERE users.id = $1;
+
+-- name: CheckFollowing :one
+SELECT count(*) FROM follow_rels WHERE follower_id = $1 AND followee_id = $2;
+
 -- name: GetFollowers :many
 SELECT follower_id FROM follow_rels WHERE followee_id = $1 ORDER BY follower_id;
 

@@ -156,7 +156,7 @@ Post Parameters
 
 ***
 
-### `PATCH` /auth/patch_user_image
+### `PATCH` /auth/patch_user_img
 
 Post Parameters
 
@@ -171,7 +171,7 @@ Response &rArr;
 
 ***
 
-### `PATCH` /auth/path_group_image
+### `PATCH` /auth/path_group_img
 
 Post Parameters
 
@@ -230,6 +230,23 @@ Response &rArr;
 	"contents": [
 		{"UserID": USER_ID, "Img": IMG(BLOB)}
 	]
+}
+```
+
+### `GET` /auth/fetch_user_prof
+
+Query Parameters
+
+* `user_id`
+
+Response &rArr;
+```json
+{
+	"contents": {
+		"name": USER_NAME,
+		"bio": BIO,
+		"is_following": BOOLEAN
+	}
 }
 ```
 

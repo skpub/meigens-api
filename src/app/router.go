@@ -36,6 +36,7 @@ func SetRouter(db *sql.DB) *gin.Engine {
 	})
 
 	r.GET("/socket", socket.TLSocket)
+	authGroup.GET("/fetch_user_prof", controller.FetchUserProfile)
 	authGroup.GET("/fetch_group_ids", controller.FetchGroups)
 	authGroup.GET("/fetch_tl", controller.FetchTL)
 	authGroup.GET("/fetch_user_imgs", controller.FetchUserImgs)
@@ -45,8 +46,8 @@ func SetRouter(db *sql.DB) *gin.Engine {
 	authGroup.POST("/add_meigen", controller.AddMeigen)
 	authGroup.POST("/follow", controller.Follow)
 	authGroup.POST("/reaction", controller.Reaction)
-	authGroup.PATCH("/patch_user_image", controller.PatchUserImage)
-	authGroup.PATCH("/patch_group_image", controller.PatchGroupImage)
+	authGroup.PATCH("/patch_user_img", controller.PatchUserImage)
+	authGroup.PATCH("/patch_group_img", controller.PatchGroupImage)
 
 	// defer db.Close()
 

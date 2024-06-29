@@ -150,6 +150,46 @@ func Follow(c *gin.Context) {
 	})
 }
 
+type UserProfile struct {
+	Username    string         `json:"name"`
+	Bio         sql.NullString `json:"bio"`
+	IsFollowing bool           `json:"is_following"`
+}
+
+func FetchUserProfile(c *gin.Context) {
+	db_handle := c.MustGet("db").(*sql.DB)
+	ctx := context.Background()
+
+	me, _ := c.Get("user_id")
+	user_id := c.Query("user_id")
+	queries := db.New(db_handle)
+
+	user, err := queries.GetUserProfile(ctx, user_id)
+	if err != nil {
+		InternalServerError(c, "DB error")
+		return
+	}
+
+	is_following, err := queries.CheckFollowing(ctx, db.CheckFollowingParams{
+		FollowerID: user_id,
+		FolloweeID: me.(string),
+	})
+	if err != nil {
+		InternalServerError(c, "DB error")
+		return
+	}
+
+	user_profile := UserProfile{
+		Username:    user.Name,
+		Bio:         user.Bio,
+		IsFollowing: is_following > 0,
+	}
+
+	c.JSON(200, gin.H{
+		"contents": user_profile,
+	})
+}
+
 func FetchUserImgs(c *gin.Context) {
 	db_handle := c.MustGet("db").(*sql.DB)
 	ctx := context.Background()

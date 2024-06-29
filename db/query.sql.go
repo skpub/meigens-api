@@ -27,6 +27,22 @@ func (q *Queries) AddUserToGroup(ctx context.Context, arg AddUserToGroupParams) 
 	return err
 }
 
+const checkFollowing = `-- name: CheckFollowing :one
+SELECT count(*) FROM follow_rels WHERE follower_id = $1 AND followee_id = $2
+`
+
+type CheckFollowingParams struct {
+	FollowerID string `json:"follower_id"`
+	FolloweeID string `json:"followee_id"`
+}
+
+func (q *Queries) CheckFollowing(ctx context.Context, arg CheckFollowingParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkFollowing, arg.FollowerID, arg.FolloweeID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const checkGroupExists = `-- name: CheckGroupExists :one
 SELECT count(*) FROM user_group_rels JOIN groups ON user_group_rels.group_id = groups.id
     WHERE user_id = $1 AND groups.name = $2
@@ -488,6 +504,22 @@ func (q *Queries) GetUserImg(ctx context.Context, id string) ([]byte, error) {
 	var img []byte
 	err := row.Scan(&img)
 	return img, err
+}
+
+const getUserProfile = `-- name: GetUserProfile :one
+SELECT users.name, users.bio FROM users WHERE users.id = $1
+`
+
+type GetUserProfileRow struct {
+	Name string         `json:"name"`
+	Bio  sql.NullString `json:"bio"`
+}
+
+func (q *Queries) GetUserProfile(ctx context.Context, id string) (GetUserProfileRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserProfile, id)
+	var i GetUserProfileRow
+	err := row.Scan(&i.Name, &i.Bio)
+	return i, err
 }
 
 const getUsernameByID = `-- name: GetUsernameByID :one
