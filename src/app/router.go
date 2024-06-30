@@ -23,6 +23,7 @@ func SetRouter(db *sql.DB) *gin.Engine {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{front},
 		AllowHeaders: []string{"Authorization"},
+		AllowMethods: []string{"GET", "POST", "PATCH"},
 	}))
 	r.POST("/signup", Signup)
 	r.POST("/login", Login)
@@ -49,6 +50,8 @@ func SetRouter(db *sql.DB) *gin.Engine {
 	authGroup.POST("/reaction", controller.Reaction)
 	authGroup.PATCH("/patch_user_img", controller.PatchUserImage)
 	authGroup.PATCH("/patch_group_img", controller.PatchGroupImage)
+	authGroup.PATCH("/patch_user_name", controller.PatchUserName)
+	authGroup.PATCH("/patch_user_bio", controller.PatchUserBio)
 
 	return r
 }

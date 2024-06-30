@@ -581,6 +581,20 @@ func (q *Queries) PatchGroupImage(ctx context.Context, arg PatchGroupImageParams
 	return err
 }
 
+const patchUserBio = `-- name: PatchUserBio :exec
+UPDATE users SET bio = $2 WHERE id = $1
+`
+
+type PatchUserBioParams struct {
+	ID  string         `json:"id"`
+	Bio sql.NullString `json:"bio"`
+}
+
+func (q *Queries) PatchUserBio(ctx context.Context, arg PatchUserBioParams) error {
+	_, err := q.db.ExecContext(ctx, patchUserBio, arg.ID, arg.Bio)
+	return err
+}
+
 const patchUserImage = `-- name: PatchUserImage :one
 UPDATE groups SET img = $2 WHERE id = (
     SELECT default_group_id FROM users WHERE users.id = $1)
@@ -597,6 +611,20 @@ func (q *Queries) PatchUserImage(ctx context.Context, arg PatchUserImageParams) 
 	var id string
 	err := row.Scan(&id)
 	return id, err
+}
+
+const patchUserName = `-- name: PatchUserName :exec
+UPDATE users SET name = $2 WHERE id = $1
+`
+
+type PatchUserNameParams struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func (q *Queries) PatchUserName(ctx context.Context, arg PatchUserNameParams) error {
+	_, err := q.db.ExecContext(ctx, patchUserName, arg.ID, arg.Name)
+	return err
 }
 
 const searchUsers = `-- name: SearchUsers :many

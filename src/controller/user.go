@@ -105,6 +105,54 @@ func PatchUserImage(c *gin.Context) {
 	})
 }
 
+func PatchUserName(c *gin.Context) {
+	db_handle := c.MustGet("db").(*sql.DB)
+	ctx := context.Background()
+
+	user_id := c.MustGet("user_id").(string)
+
+	name := c.PostForm("name")
+
+	queries := db.New(db_handle)
+	err := queries.PatchUserName(ctx, db.PatchUserNameParams{
+		ID:   user_id,
+		Name: name,
+	})
+	if err != nil {
+		InternalServerError(c, "Failed to patch name.")
+		return
+	}
+	c.JSON(200, gin.H{
+		"message": "Successfully patched the name.",
+		"name":    name,
+	})
+}
+
+func PatchUserBio(c *gin.Context) {
+	db_handle := c.MustGet("db").(*sql.DB)
+	ctx := context.Background()
+
+	user_id := c.MustGet("user_id").(string)
+
+	bio := c.PostForm("bio")
+
+	queries := db.New(db_handle)
+	bio_nullstr := sql.NullString{String: bio, Valid: true}
+	err := queries.PatchUserBio(ctx, db.PatchUserBioParams{
+		ID:  user_id,
+		Bio: bio_nullstr,
+	})
+
+	if err != nil {
+		InternalServerError(c, "Failed to patch name.")
+		return
+	}
+	c.JSON(200, gin.H{
+		"message": "Successfully patched the name.",
+		"bio":     bio,
+	})
+}
+
 func SearchUsers(c *gin.Context) {
 	db_handle := c.MustGet("db").(*sql.DB)
 	ctx := context.Background()
@@ -151,9 +199,9 @@ func Follow(c *gin.Context) {
 }
 
 type UserProfile struct {
-	Username    string         `json:"name"`
-	Bio         sql.NullString `json:"bio"`
-	IsFollowing bool           `json:"is_following"`
+	Username    string `json:"name"`
+	Bio         string `json:"bio"`
+	IsFollowing bool   `json:"is_following"`
 }
 
 func FetchUserProfile(c *gin.Context) {
@@ -179,9 +227,16 @@ func FetchUserProfile(c *gin.Context) {
 		return
 	}
 
+	var bio string
+	if user.Bio.Valid {
+		bio = user.Bio.String
+	} else {
+		bio = ""
+	}
+
 	user_profile := UserProfile{
 		Username:    user.Name,
-		Bio:         user.Bio,
+		Bio:         bio,
 		IsFollowing: is_following > 0,
 	}
 

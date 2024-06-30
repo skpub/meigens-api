@@ -46,6 +46,13 @@ UPDATE groups SET img = $2 WHERE id = (
 -- name: PatchGroupImage :exec
 UPDATE groups SET img = $2 WHERE id = $1;
 
+-- name: PatchUserName :exec
+UPDATE users SET name = $2 WHERE id = $1;
+
+-- name: PatchUserBio :exec
+UPDATE users SET bio = $2 WHERE id = $1;
+
+
 
 -- name: DeleteGroup :exec
 DELETE FROM groups WHERE id = $1;
