@@ -77,6 +77,22 @@ SELECT
         AND users.default_group_id = groups.id
         AND meigens.created_at < $3 ORDER BY meigens.created_at DESC LIMIT $2;
 
+-- name: FetchGlobalTL :many
+SELECT
+    meigens.meigen      AS meigen,
+    meigens.whom_id     AS whom_id,
+    users.name          AS whom,
+    meigens.group_id    AS group_id,
+    groups.name         AS group,
+    poets.name          AS poet,
+    poets.id            AS poet_id,
+    meigens.created_at  AS created_at
+    FROM meigens
+    JOIN groups ON meigens.group_id = groups.id
+    JOIN users ON meigens.whom_id = users.id
+    JOIN poets ON meigens.poet_id = poets.id
+    WHERE meigens.created_at < $2 ORDER BY meigens.created_at DESC LIMIT $1;
+
 -- name: GetUserProfile :one
 SELECT users.name, users.bio FROM users WHERE users.id = $1;
 

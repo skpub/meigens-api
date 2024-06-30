@@ -22,7 +22,7 @@ func SetRouter(db *sql.DB) *gin.Engine {
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{front},
-		AllowHeaders: []string{"Authorization"},
+		AllowHeaders: []string{"Authorization", "ContentType"},
 		AllowMethods: []string{"GET", "POST", "PATCH"},
 	}))
 	r.POST("/signup", Signup)
@@ -41,6 +41,7 @@ func SetRouter(db *sql.DB) *gin.Engine {
 	authGroup.GET("/fetch_user_prof", controller.FetchUserProfile)
 	authGroup.GET("/fetch_group_ids", controller.FetchGroups)
 	authGroup.GET("/fetch_tl", controller.FetchTL)
+	authGroup.GET("/fetch_global_tl", controller.FetchGlobalTL)
 	authGroup.GET("/fetch_user_imgs", controller.FetchUserImgs)
 	authGroup.POST("/search_users", controller.SearchUsers)
 	authGroup.POST("/add_group", controller.AddGroup)

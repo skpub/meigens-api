@@ -261,6 +261,71 @@ func (q *Queries) DeleteGroup(ctx context.Context, id string) error {
 	return err
 }
 
+const fetchGlobalTL = `-- name: FetchGlobalTL :many
+SELECT
+    meigens.meigen      AS meigen,
+    meigens.whom_id     AS whom_id,
+    users.name          AS whom,
+    meigens.group_id    AS group_id,
+    groups.name         AS group,
+    poets.name          AS poet,
+    poets.id            AS poet_id,
+    meigens.created_at  AS created_at
+    FROM meigens
+    JOIN groups ON meigens.group_id = groups.id
+    JOIN users ON meigens.whom_id = users.id
+    JOIN poets ON meigens.poet_id = poets.id
+    WHERE meigens.created_at < $2 ORDER BY meigens.created_at DESC LIMIT $1
+`
+
+type FetchGlobalTLParams struct {
+	Limit     int32        `json:"limit"`
+	CreatedAt sql.NullTime `json:"created_at"`
+}
+
+type FetchGlobalTLRow struct {
+	Meigen    string       `json:"meigen"`
+	WhomID    string       `json:"whom_id"`
+	Whom      string       `json:"whom"`
+	GroupID   string       `json:"group_id"`
+	Group     string       `json:"group"`
+	Poet      string       `json:"poet"`
+	PoetID    uuid.UUID    `json:"poet_id"`
+	CreatedAt sql.NullTime `json:"created_at"`
+}
+
+func (q *Queries) FetchGlobalTL(ctx context.Context, arg FetchGlobalTLParams) ([]FetchGlobalTLRow, error) {
+	rows, err := q.db.QueryContext(ctx, fetchGlobalTL, arg.Limit, arg.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FetchGlobalTLRow
+	for rows.Next() {
+		var i FetchGlobalTLRow
+		if err := rows.Scan(
+			&i.Meigen,
+			&i.WhomID,
+			&i.Whom,
+			&i.GroupID,
+			&i.Group,
+			&i.Poet,
+			&i.PoetID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const fetchTL = `-- name: FetchTL :many
 SELECT
     meigens.meigen      AS meigen,

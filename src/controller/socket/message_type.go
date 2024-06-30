@@ -1,7 +1,7 @@
 package socket
 
 type MsgTLState struct {
-	State int8 `json:"state"`
+	State uint8 `json:"state"`
 }
 
 type MsgMeigen struct {

@@ -8,6 +8,7 @@ import (
 	"meigens-api/db"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -47,6 +48,11 @@ func removeClientFromClients(user_id string, conn *websocket.Conn) {
 	mtx.Unlock()
 }
 
+type connection_state struct {
+	conn  *websocket.Conn
+	state uint8
+}
+
 func TLSocket(c *gin.Context) {
 	conn, err := socketUpgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -55,14 +61,25 @@ func TLSocket(c *gin.Context) {
 	}
 	mtx.Lock()
 	user_id := c.Query("user_id")
+	state := c.Query("state")
 	connections, not_first := clients.Get(user_id)
+	var state_num int64
+	state_num, err = strconv.ParseInt(state, 10, 8)
+	if err != nil {
+		SendErrorMessage(conn, "Invalid state.")
+		return
+	}
+	if state_num < 0 || state_num > 1 {
+		SendErrorMessage(conn, "Invalid state.")
+		return
+	}
 	// connections: nil or hashset of conn
 	if !not_first {
 		var connections_set = hashset.New()
-		connections_set.Add(conn)
+		connections_set.Add(connection_state{conn, uint8(state_num)})
 		clients.Put(user_id, connections_set)
 	} else {
-		connections.(*hashset.Set).Add(conn)
+		connections.(*hashset.Set).Add(connection_state{conn, uint8(state_num)})
 		// conections is a pointer to hashset.
 		// so this operation is reflected to the clients.
 	}
@@ -109,9 +126,14 @@ func TLSocket(c *gin.Context) {
 				SendErrorMessage(conn, "Invalid JSON format.")
 				continue
 			}
-			//
-			// TODO: implement.
-			//
+			state := jsonData.State
+			connections, not_first := clients.Get(user_id)
+			if !not_first {
+				SendErrorMessage(conn, "Invalid user ID.")
+				continue
+			}
+			set := connections.(*hashset.Set)
+			set.Add(connection_state{conn, state})
 		case "1":
 			// create meigen.
 			var jsonData MsgMeigen
@@ -175,7 +197,7 @@ func TLSocket(c *gin.Context) {
 			meigen, _ := json.Marshal(record)
 			tx.Commit()
 			//
-			SendMeigenToFollowers(followers, []byte("1" + "," + string(meigen)), user_id)
+			SendMeigenToFollowers(followers, []byte("1"+","+string(meigen)), user_id)
 			//
 		case "2":
 			// create meigen to group.
@@ -195,7 +217,7 @@ func TLSocket(c *gin.Context) {
 }
 
 func SendErrorMessage(conn *websocket.Conn, msg string) {
-	conn.WriteMessage(websocket.TextMessage, []byte("0," + msg))
+	conn.WriteMessage(websocket.TextMessage, []byte("0,"+msg))
 }
 
 func SendMeigenToFollowers(recipients_candidate_ []string, msg []byte, user_id string) {
@@ -216,12 +238,18 @@ func SendMeigenToFollowers(recipients_candidate_ []string, msg []byte, user_id s
 	resipients := hashset.New()
 	it := clients.Iterator()
 	for it.Next() {
+		for _, pair := range it.Value().(*hashset.Set).Values() {
+			if pair.(connection_state).state == 1 {
+				resipients.Add(pair.(connection_state).conn)
+			}
+		}
 		for _, candidate := range recipients_candidate {
 			if it.Key() == candidate {
 				// it.Values are the (user's) hashset of connections.
 				// user may have multiple connections.
-				for _, conn := range it.Value().(*hashset.Set).Values() {
+				for _, pair := range it.Value().(*hashset.Set).Values() {
 					// conn: *websocket.Conn
+					conn := pair.(connection_state).conn
 					resipients.Add(conn)
 				}
 			} else if it.Key().(string) > candidate {
