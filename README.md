@@ -250,6 +250,16 @@ Response &rArr;
 }
 ```
 
+### `GET` /auth/refresh_token
+
+Response &rArr;
+```json
+{
+	"message": "You got an access token.",
+	"token": "YOUR TOKEN"
+}
+```
+
 ### `GET` /socket => Upgrade to WebSocket
 名言をポストした際、ログイン中のフォロワーに名言が送られます。
 こんな感じでサーバがクライアントに何かを送信する系の操作を実現するためには双方向通信が必要であり、

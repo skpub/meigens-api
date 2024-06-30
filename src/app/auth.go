@@ -102,6 +102,29 @@ func Signup(c *gin.Context) {
 	})
 }
 
+func RefreshToken(c *gin.Context) {
+	user_id, _ := c.Get("user_id")
+	secret := os.Getenv("SECRET")
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": user_id,
+		"exp": time.Now().Add(time.Minute * 5).Unix(),
+	})
+	tokenString, err := token.SignedString([]byte(secret))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to generate token.",
+		})
+		c.Abort()
+		return
+	} else {
+		c.JSON(200, gin.H{
+			"message": "You got new access token.",
+			"token":   tokenString,
+		})
+	}
+}
+
 func Login(c *gin.Context) {
 	user_id := c.PostForm("user_id")
 	password := c.PostForm("password")
@@ -129,7 +152,7 @@ func Login(c *gin.Context) {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user_id,
-		"exp":     time.Now().Add(time.Hour * 24 * 3).Unix(),
+		"exp":     time.Now().Add(time.Minute * 5).Unix(),
 	})
 	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
