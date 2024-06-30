@@ -53,6 +53,7 @@ func SetRouter(db *sql.DB) *gin.Engine {
 	authGroup.PATCH("/patch_group_img", controller.PatchGroupImage)
 	authGroup.PATCH("/patch_user_name", controller.PatchUserName)
 	authGroup.PATCH("/patch_user_bio", controller.PatchUserBio)
+	authGroup.PATCH("/unfollow", controller.UnFollow)
 
 	return r
 }

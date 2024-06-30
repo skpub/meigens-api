@@ -173,6 +173,31 @@ func SearchUsers(c *gin.Context) {
 	})
 }
 
+func UnFollow(c *gin.Context) {
+	db_handle := c.MustGet("db").(*sql.DB)
+	ctx := context.Background()
+
+	target_id := c.PostForm("target_id")
+	user_id, _ := c.Get("user_id")
+
+	queries := db.New(db_handle)
+
+	if _, err := queries.CheckUserExists(ctx, target_id); err != nil {
+		BadRequest(c, "The target user does not exist.")
+	}
+
+	if err := queries.UnFollow(ctx, db.UnFollowParams{
+		FollowerID: user_id.(string),
+		FolloweeID: target_id,
+	}); err != nil {
+		BadRequest(c, "Already unfollowed.")
+		return
+	}
+	c.JSON(200, gin.H{
+		"message": "Successfully unfollowed \"" + target_id + "\".",
+	})
+}
+
 func Follow(c *gin.Context) {
 	db_handle := c.MustGet("db").(*sql.DB)
 	ctx := context.Background()
@@ -218,14 +243,10 @@ func FetchUserProfile(c *gin.Context) {
 		return
 	}
 
-	is_following, err := queries.CheckFollowing(ctx, db.CheckFollowingParams{
-		FollowerID: user_id,
-		FolloweeID: me.(string),
+	following, _ := queries.CheckFollowing(ctx, db.CheckFollowingParams{
+		FollowerID: me.(string),
+		FolloweeID: user_id,
 	})
-	if err != nil {
-		InternalServerError(c, "DB error")
-		return
-	}
 
 	var bio string
 	if user.Bio.Valid {
@@ -237,7 +258,7 @@ func FetchUserProfile(c *gin.Context) {
 	user_profile := UserProfile{
 		Username:    user.Name,
 		Bio:         bio,
-		IsFollowing: is_following > 0,
+		IsFollowing: following,
 	}
 
 	c.JSON(200, gin.H{

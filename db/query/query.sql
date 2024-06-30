@@ -4,6 +4,9 @@ INSERT INTO users (id, name, email, password, default_group_id) VALUES ($1, $2, 
 -- name: Follow :exec
 INSERT INTO follow_rels (follower_id, followee_id) VALUES ($1, $2);
 
+-- name: UnFollow :exec
+DELETE FROM follow_rels WHERE follower_id = $1 AND followee_id = $2;
+
 -- name: CreateMeigen :one
 INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id;
 
@@ -69,7 +72,7 @@ SELECT
     poets.id            AS poet_id,
     meigens.created_at  AS created_at
     FROM meigens
-    JOIN follow_rels ON meigens.whom_id = follow_rels.followee_id OR meigens.whom_id = follow_rels.follower_id
+    LEFT JOIN follow_rels ON meigens.whom_id = follow_rels.followee_id OR meigens.whom_id = follow_rels.follower_id
     JOIN groups ON meigens.group_id = groups.id
     JOIN users ON meigens.whom_id = users.id
     JOIN poets ON meigens.poet_id = poets.id
@@ -97,7 +100,7 @@ SELECT
 SELECT users.name, users.bio FROM users WHERE users.id = $1;
 
 -- name: CheckFollowing :one
-SELECT count(*) FROM follow_rels WHERE follower_id = $1 AND followee_id = $2;
+SELECT EXISTS (SELECT * FROM follow_rels WHERE follower_id = $1 AND followee_id = $2);
 
 -- name: GetFollowers :many
 SELECT follower_id FROM follow_rels WHERE followee_id = $1 ORDER BY follower_id;

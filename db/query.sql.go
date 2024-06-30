@@ -28,7 +28,7 @@ func (q *Queries) AddUserToGroup(ctx context.Context, arg AddUserToGroupParams) 
 }
 
 const checkFollowing = `-- name: CheckFollowing :one
-SELECT count(*) FROM follow_rels WHERE follower_id = $1 AND followee_id = $2
+SELECT EXISTS (SELECT follower_id, followee_id FROM follow_rels WHERE follower_id = $1 AND followee_id = $2)
 `
 
 type CheckFollowingParams struct {
@@ -36,11 +36,11 @@ type CheckFollowingParams struct {
 	FolloweeID string `json:"followee_id"`
 }
 
-func (q *Queries) CheckFollowing(ctx context.Context, arg CheckFollowingParams) (int64, error) {
+func (q *Queries) CheckFollowing(ctx context.Context, arg CheckFollowingParams) (bool, error) {
 	row := q.db.QueryRowContext(ctx, checkFollowing, arg.FollowerID, arg.FolloweeID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const checkGroupExists = `-- name: CheckGroupExists :one
@@ -337,7 +337,7 @@ SELECT
     poets.id            AS poet_id,
     meigens.created_at  AS created_at
     FROM meigens
-    JOIN follow_rels ON meigens.whom_id = follow_rels.followee_id OR meigens.whom_id = follow_rels.follower_id
+    LEFT JOIN follow_rels ON meigens.whom_id = follow_rels.followee_id OR meigens.whom_id = follow_rels.follower_id
     JOIN groups ON meigens.group_id = groups.id
     JOIN users ON meigens.whom_id = users.id
     JOIN poets ON meigens.poet_id = poets.id
@@ -723,4 +723,18 @@ func (q *Queries) SearchUsers(ctx context.Context, name string) ([]SearchUsersRo
 		return nil, err
 	}
 	return items, nil
+}
+
+const unFollow = `-- name: UnFollow :exec
+DELETE FROM follow_rels WHERE follower_id = $1 AND followee_id = $2
+`
+
+type UnFollowParams struct {
+	FollowerID string `json:"follower_id"`
+	FolloweeID string `json:"followee_id"`
+}
+
+func (q *Queries) UnFollow(ctx context.Context, arg UnFollowParams) error {
+	_, err := q.db.ExecContext(ctx, unFollow, arg.FollowerID, arg.FolloweeID)
+	return err
 }
