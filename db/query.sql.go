@@ -263,6 +263,7 @@ func (q *Queries) DeleteGroup(ctx context.Context, id string) error {
 
 const fetchGlobalTL = `-- name: FetchGlobalTL :many
 SELECT
+    meigens.id          AS meigen_id,
     meigens.meigen      AS meigen,
     meigens.whom_id     AS whom_id,
     users.name          AS whom,
@@ -284,6 +285,7 @@ type FetchGlobalTLParams struct {
 }
 
 type FetchGlobalTLRow struct {
+	MeigenID  uuid.UUID    `json:"meigen_id"`
 	Meigen    string       `json:"meigen"`
 	WhomID    string       `json:"whom_id"`
 	Whom      string       `json:"whom"`
@@ -304,6 +306,7 @@ func (q *Queries) FetchGlobalTL(ctx context.Context, arg FetchGlobalTLParams) ([
 	for rows.Next() {
 		var i FetchGlobalTLRow
 		if err := rows.Scan(
+			&i.MeigenID,
 			&i.Meigen,
 			&i.WhomID,
 			&i.Whom,
@@ -328,6 +331,7 @@ func (q *Queries) FetchGlobalTL(ctx context.Context, arg FetchGlobalTLParams) ([
 
 const fetchTL = `-- name: FetchTL :many
 SELECT
+    meigens.id          AS meigen_id,
     meigens.meigen      AS meigen,
     meigens.whom_id     AS whom_id,
     users.name          AS whom,
@@ -353,6 +357,7 @@ type FetchTLParams struct {
 }
 
 type FetchTLRow struct {
+	MeigenID  uuid.UUID    `json:"meigen_id"`
 	Meigen    string       `json:"meigen"`
 	WhomID    string       `json:"whom_id"`
 	Whom      string       `json:"whom"`
@@ -373,6 +378,7 @@ func (q *Queries) FetchTL(ctx context.Context, arg FetchTLParams) ([]FetchTLRow,
 	for rows.Next() {
 		var i FetchTLRow
 		if err := rows.Scan(
+			&i.MeigenID,
 			&i.Meigen,
 			&i.WhomID,
 			&i.Whom,
@@ -476,6 +482,7 @@ func (q *Queries) GetGroupsParticipated(ctx context.Context, userID string) ([]s
 
 const getMeigenContent = `-- name: GetMeigenContent :one
 SELECT
+    meigens.id          AS meigen_id,
     meigens.meigen      AS meigen,
     meigens.whom_id     AS whom_id,
     users.name          AS whom,
@@ -492,6 +499,7 @@ SELECT
 `
 
 type GetMeigenContentRow struct {
+	MeigenID  uuid.UUID    `json:"meigen_id"`
 	Meigen    string       `json:"meigen"`
 	WhomID    string       `json:"whom_id"`
 	Whom      string       `json:"whom"`
@@ -506,6 +514,7 @@ func (q *Queries) GetMeigenContent(ctx context.Context, id uuid.UUID) (GetMeigen
 	row := q.db.QueryRowContext(ctx, getMeigenContent, id)
 	var i GetMeigenContentRow
 	err := row.Scan(
+		&i.MeigenID,
 		&i.Meigen,
 		&i.WhomID,
 		&i.Whom,

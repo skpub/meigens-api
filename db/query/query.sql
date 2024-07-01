@@ -12,6 +12,7 @@ INSERT INTO meigens (meigen, whom_id, group_id, poet_id) VALUES ($1, $2, $3, $4)
 
 -- name: GetMeigenContent :one
 SELECT
+    meigens.id          AS meigen_id,
     meigens.meigen      AS meigen,
     meigens.whom_id     AS whom_id,
     users.name          AS whom,
@@ -63,6 +64,7 @@ DELETE FROM groups WHERE id = $1;
 
 -- name: FetchTL :many
 SELECT
+    meigens.id          AS meigen_id,
     meigens.meigen      AS meigen,
     meigens.whom_id     AS whom_id,
     users.name          AS whom,
@@ -82,6 +84,7 @@ SELECT
 
 -- name: FetchGlobalTL :many
 SELECT
+    meigens.id          AS meigen_id,
     meigens.meigen      AS meigen,
     meigens.whom_id     AS whom_id,
     users.name          AS whom,
